@@ -43,3 +43,34 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Configuration sensible (clés API)
+config.json
+
+# Données utilisateur
+user_progress.json
+
+# Python (backend legacy)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+*.egg
+
+# IDE
+.vscode/
+*.code-workspace
+
+# OS
+Thumbs.db
+*.tmp
+*.temp
+
+# Flutter web build (sera rebuild par GitHub Actions)
+/build/web/
