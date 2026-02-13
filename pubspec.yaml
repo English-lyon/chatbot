@@ -15,7 +15,6 @@ dependencies:
   
   # HTTP & API
   http: ^1.2.0
-  google_generative_ai: ^0.4.6
   
   # Local Storage
   shared_preferences: ^2.2.2

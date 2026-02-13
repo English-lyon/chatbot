@@ -1,25 +1,55 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AIService {
-  static const String apiKey = String.fromEnvironment('GEMINI_API_KEY');
-  late final GenerativeModel _model;
-  
+  static const String apiKey = String.fromEnvironment('OPENAI_API_KEY');
+  static const String _model = 'gpt-4o-mini';
+  static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
+
   AIService() {
     if (apiKey.isEmpty) {
-      print('WARNING: GEMINI_API_KEY is not set! Add it via --dart-define=GEMINI_API_KEY=your_key');
+      print('WARNING: OPENAI_API_KEY is not set! Add it via --dart-define=OPENAI_API_KEY=your_key');
     } else {
-      print('AIService: API key loaded successfully.');
+      print('AIService: OpenAI API key loaded successfully.');
     }
-    _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
-      apiKey: apiKey,
-    );
+  }
+
+  Future<String> _ask(String systemPrompt, String userMessage) async {
+    try {
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            {'role': 'user', 'content': userMessage},
+          ],
+          'max_tokens': 200,
+          'temperature': 0.8,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['choices'][0]['message']['content'] ?? 'Hmm, I lost my words! 😅';
+      } else {
+        print('OpenAI Error ${response.statusCode}: ${response.body}');
+        return 'Oops! I had a little problem 😅 Can you try again?';
+      }
+    } catch (e, stackTrace) {
+      print('AI Error: $e');
+      print('AI StackTrace: $stackTrace');
+      return 'Oops! I had a little problem 😅 Can you try again?';
+    }
   }
 
   Future<String> chat(String userMessage, {String? cefrLevel, String? topic}) async {
-    try {
-      final levelGuidance = _getLevelGuidance(cefrLevel ?? 'A1');
-      final systemPrompt = '''You are Buddy, a fun and enthusiastic kid (about 8 years old) who LOVES English and talks to another child.
+    final levelGuidance = _getLevelGuidance(cefrLevel ?? 'A1');
+    final systemPrompt = '''You are Buddy, a fun and enthusiastic kid (about 8 years old) who LOVES English and talks to another child.
 You are NOT a teacher. You are a friend, another kid who happens to know English well.
 
 How you talk:
@@ -35,58 +65,38 @@ How you talk:
 $levelGuidance
 
 Keep responses short (2-3 sentences max), fun, and natural like a kid chatting.
+${cefrLevel != null ? 'Your friend\'s English level: $cefrLevel\n' : ''}${topic != null ? 'You\'re talking about: $topic\n' : ''}''';
 
-${cefrLevel != null ? 'Your friend\'s English level: $cefrLevel\n' : ''}${topic != null ? 'You\'re talking about: $topic\n' : ''}
-Your friend says: $userMessage
-
-Respond like an excited kid friend:''';
-
-      final content = [Content.text(systemPrompt)];
-      final response = await _model.generateContent(content);
-      
-      return response.text ?? 'Sorry, I had trouble understanding. Try again! 😊';
-    } catch (e, stackTrace) {
-      print('AI Error: $e');
-      print('AI Error type: ${e.runtimeType}');
-      print('AI StackTrace: $stackTrace');
-      return 'Oops! I had a little problem 😅 Can you try again?';
-    }
+    return _ask(systemPrompt, userMessage);
   }
 
   Future<String> getHint(String question, String correctAnswer) async {
-    try {
-      final prompt = '''Your friend is trying to answer this English question and needs a little help:
-Question: $question
-Correct answer: $correctAnswer
-
-You're a kid too! Give a fun hint (not the answer!) like a friend would.
+    const systemPrompt = '''You're a kid (about 8 years old) helping a friend with an English question.
+Give a fun hint (not the answer!) like a friend would.
 Say something like "Hmm think about..." or "Oh oh I know! It sounds like..."
 Use an emoji and keep it to one short sentence.''';
 
-      final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
-      
-      return response.text ?? 'Think about what you know! You can do it! 💪';
+    final userMsg = 'Question: $question\nCorrect answer: $correctAnswer';
+
+    try {
+      return await _ask(systemPrompt, userMsg);
     } catch (e) {
-      print('Hint Error: $e');
       return 'Think about what you know! You can do it! 💪';
     }
   }
 
   Future<String> getEncouragement(int score, int total) async {
-    try {
-      final percentage = (score / total * 100).round();
-      final prompt = '''Your friend just finished a quiz and got $score out of $total ($percentage%)!
-You're a kid too - react like an excited friend would!
-Say something short with emojis, like you're cheering them on at the playground.''';
+    final percentage = (score / total * 100).round();
+    const systemPrompt = '''You're a kid (about 8 years old) cheering on your friend after a quiz.
+React like an excited friend at the playground.
+Say something short with emojis.''';
 
-      final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
-      
-      return response.text ?? _getDefaultEncouragement(percentage);
+    final userMsg = 'My friend got $score out of $total ($percentage%)!';
+
+    try {
+      return await _ask(systemPrompt, userMsg);
     } catch (e) {
-      print('Encouragement Error: $e');
-      return _getDefaultEncouragement((score / total * 100).round());
+      return _getDefaultEncouragement(percentage);
     }
   }
 
@@ -101,21 +111,16 @@ Say something short with emojis, like you're cheering them on at the playground.
   }
 
   Future<String> explainWord(String word) async {
-    try {
-      final prompt = '''Your friend asked you what the English word '$word' means.
-You're a kid (about 8 years old) explaining it to another kid.
+    const systemPrompt = '''You're a kid (about 8 years old) explaining an English word to another kid.
 Talk like a real kid:
 - Say what it means in super simple words
 - Give a fun example from kid life
 - Add an emoji!
 Keep it short like a kid would!''';
 
-      final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
-      
-      return response.text ?? 'The word \'$word\' is a great English word! Keep learning! 🌟';
+    try {
+      return await _ask(systemPrompt, 'What does "$word" mean?');
     } catch (e) {
-      print('Explain Error: $e');
       return 'The word \'$word\' is a great English word! Keep learning! 🌟';
     }
   }
