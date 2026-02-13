@@ -35,6 +35,8 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   late List<Question> _questionQueue;
   int _queueIndex = 0;
+  int? _selectedOptionIndex;
+  int _lives = 5;
   int _score = 0;
   int _totalOriginal = 0;
   int _correctOnFirstTry = 0;
@@ -76,12 +78,197 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _questionQueue = List<Question>.from(widget.questions);
+    _questionQueue = _buildDuolingoExerciseFlow(widget.questions);
     _totalOriginal = _questionQueue.length;
     _initSpeech();
     _setupAudioCallbacks();
     _prepareCurrentQuestion();
     _onQuestionReady();
+  }
+
+  Widget _buildCorrectionPanel() {
+    final isCorrect = _feedback.startsWith('🌟');
+    final bg = isCorrect ? const Color(0xFFDFF6CC) : const Color(0xFFFFE0E0);
+    final border = isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
+    final text = isCorrect ? const Color(0xFF2E7D32) : const Color(0xFFB00020);
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          decoration: BoxDecoration(
+            color: bg,
+            border: Border(top: BorderSide(color: border, width: 2)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isCorrect ? 'Great job!' : 'Not quite',
+                style: TextStyle(
+                  color: text,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _feedback,
+                style: TextStyle(color: text, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _nextQuestion,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: border,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'CONTINUE',
+                    style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Question> _buildDuolingoExerciseFlow(List<Question> source) {
+    final flow = <Question>[];
+    for (int i = 0; i < source.length; i++) {
+      final q = source[i];
+      final distractors = _buildDistractors(q.answer, q.options);
+      final mode = i % 5;
+
+      if (mode == 0) {
+        flow.add(Question(
+          question: q.question,
+          answer: q.answer,
+          options: distractors,
+          emoji: q.emoji,
+          type: QuestionType.multipleChoice,
+        ));
+      } else if (mode == 1) {
+        flow.add(Question(
+          question: 'Listen and choose the correct word',
+          answer: q.answer,
+          options: distractors,
+          emoji: '🎧',
+          type: QuestionType.listening,
+        ));
+      } else if (mode == 2) {
+        flow.add(Question(
+          question: 'Type the answer in English: ${q.question}',
+          answer: q.answer,
+          options: distractors,
+          emoji: '✍️',
+          type: QuestionType.writing,
+        ));
+      } else if (mode == 3) {
+        flow.add(Question(
+          question: 'Say this in English: ${q.answer}',
+          answer: q.answer,
+          options: distractors,
+          emoji: '🗣️',
+          type: QuestionType.speaking,
+        ));
+      } else {
+        final phrase = q.answer.contains(' ')
+            ? q.answer
+            : 'I like ${q.answer.toLowerCase()}';
+        flow.add(Question(
+          question: 'Build the English sentence',
+          answer: phrase,
+          options: _buildWordOrderOptions(phrase),
+          emoji: '🧩',
+          type: QuestionType.wordOrder,
+        ));
+      }
+    }
+    return flow;
+  }
+
+  List<String> _buildDistractors(String answer, List<String> options) {
+    final set = <String>{};
+    set.add(answer.toLowerCase());
+    for (final option in options) {
+      set.add(option.toLowerCase());
+    }
+    const filler = ['cat', 'dog', 'book', 'blue', 'water', 'school'];
+    for (final word in filler) {
+      if (set.length >= 4) break;
+      set.add(word);
+    }
+    final result = set.toList();
+    result.shuffle();
+    return result;
+  }
+
+  List<String> _buildWordOrderOptions(String phrase) {
+    final words = phrase.split(' ').where((w) => w.trim().isNotEmpty).toList();
+    const extras = ['the', 'is', 'very', 'my', 'and'];
+    final options = <String>[...words];
+    for (final extra in extras) {
+      if (options.length >= words.length + 2) break;
+      if (!options.contains(extra)) options.add(extra);
+    }
+    options.shuffle();
+    return options;
+  }
+
+  void _selectOption(int index) {
+    if (_answered) return;
+    setState(() {
+      _selectedOptionIndex = index;
+      for (int i = 0; i < _answerStates.length; i++) {
+        _answerStates[i] = i == index ? AnswerState.selected : AnswerState.normal;
+      }
+    });
+  }
+
+  bool _isOptionExercise(QuestionType type) {
+    return type == QuestionType.multipleChoice ||
+        type == QuestionType.listening ||
+        type == QuestionType.reading;
+  }
+
+  bool _canSubmitExercise(Question question) {
+    if (_answered) return false;
+    if (_isOptionExercise(question.type)) return _selectedOptionIndex != null;
+    if (question.type == QuestionType.wordOrder) return _selectedWords.isNotEmpty;
+    if (question.type == QuestionType.writing) return _writingController.text.trim().isNotEmpty;
+    return false;
+  }
+
+  void _submitCurrentExercise(Question question) {
+    if (_answered) return;
+    if (_isOptionExercise(question.type)) {
+      if (_selectedOptionIndex == null) return;
+      final idx = _selectedOptionIndex!;
+      _checkAnswer(_shuffledOptions[idx], idx);
+      return;
+    }
+    if (question.type == QuestionType.wordOrder) {
+      _checkWordOrder();
+      return;
+    }
+    if (question.type == QuestionType.writing) {
+      _checkWritingAnswer();
+    }
   }
 
   Future<void> _initSpeech() async {
@@ -131,7 +318,10 @@ class _QuizScreenState extends State<QuizScreen> {
     } else if (question.type == QuestionType.reading) {
       _setMascot(MascotMood.thinking, 'Read carefully! 📖');
     } else if (question.type == QuestionType.writing) {
-      _setMascot(MascotMood.thinking, 'You can do it! ✏️');
+      _setMascot(MascotMood.thinking, 'Type in English! ✏️');
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) _audio.speak(question.answer);
+      });
     } else if (question.type == QuestionType.wordOrder) {
       _setMascot(MascotMood.idle, 'Tap the words! 🧩');
     } else {
@@ -160,6 +350,7 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     _spokenText = '';
+    _selectedOptionIndex = null;
     _writingController.clear();
     _selectedWords = [];
     _wordPool = [];
@@ -243,6 +434,7 @@ class _QuizScreenState extends State<QuizScreen> {
         _setMascot(MascotMood.happy, 'Amazing! 🎉');
         _audio.speakCheer();
       } else {
+        _lives = (_lives - 1).clamp(0, 5);
         if (index >= 0 && index < _answerStates.length) {
           _answerStates[index] = AnswerState.wrong;
           final correctIndex = _shuffledOptions
@@ -261,10 +453,6 @@ class _QuizScreenState extends State<QuizScreen> {
           }
         }
       }
-    });
-
-    Future.delayed(const Duration(milliseconds: 3500), () {
-      if (mounted) _nextQuestion();
     });
   }
 
@@ -327,13 +515,11 @@ class _QuizScreenState extends State<QuizScreen> {
         _setMascot(MascotMood.happy, 'Perfect! 🎤✨');
         _audio.speakCheer();
       } else {
+        _lives = (_lives - 1).clamp(0, 5);
         _feedback = '💪 You said "$spoken" — the word is "$expected"';
         _setMascot(MascotMood.sad, 'Good try! Listen again 🔊');
         _audio.speak(expected);
       }
-    });
-    Future.delayed(const Duration(milliseconds: 3000), () {
-      if (mounted) _nextQuestion();
     });
   }
 
@@ -449,11 +635,12 @@ class _QuizScreenState extends State<QuizScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                _questionQueue = List<Question>.from(widget.questions);
+                _questionQueue = _buildDuolingoExerciseFlow(widget.questions);
                 _queueIndex = 0;
                 _score = 0;
-                _totalOriginal = widget.questions.length;
+                _totalOriginal = _questionQueue.length;
                 _correctOnFirstTry = 0;
+                _lives = 5;
                 _isRetryQuestion = false;
                 _answered = false;
                 _feedback = '';
@@ -564,6 +751,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     final question = _questionQueue[_queueIndex];
     final badge = _typeBadge(question.type);
+    final canSubmit = _canSubmitExercise(question);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FF),
@@ -577,6 +765,15 @@ class _QuizScreenState extends State<QuizScreen> {
             icon: Icon(_audio.isSlow ? Icons.speed : Icons.slow_motion_video_rounded, size: 22),
             tooltip: _audio.isSlow ? 'Normal speed' : 'Slow speed 🐢',
             onPressed: () => setState(() => _audio.toggleSlow()),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Text(
+                '${'❤️' * _lives}${'🤍' * (5 - _lives)}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -606,33 +803,70 @@ class _QuizScreenState extends State<QuizScreen> {
                   MascotWidget(mood: _mascotMood, size: 50, speechBubble: _mascotSpeech),
                   const SizedBox(height: 8),
                   // ── Question area ──
-                  _buildQuestionArea(question),
-                  const SizedBox(height: 8),
-                  // ── Feedback ──
-                  if (_feedback.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _feedback.startsWith('🌟') ? Colors.green.shade50 : Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _feedback,
-                        style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold,
-                          color: _feedback.startsWith('🌟') ? Colors.green.shade700 : Colors.orange.shade800,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    transitionBuilder: (child, animation) {
+                      final slide = Tween<Offset>(
+                        begin: const Offset(0.06, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(position: slide, child: child),
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey('question_${_queueIndex}_${question.type.name}'),
+                      child: _buildQuestionArea(question),
                     ),
+                  ),
                   const SizedBox(height: 8),
                   // ── Answer area ──
-                  Expanded(child: _buildAnswerArea(question)),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey('answer_${_queueIndex}_${question.type.name}'),
+                        child: _buildAnswerArea(question),
+                      ),
+                    ),
+                  ),
+                  if (!_answered && question.type != QuestionType.speaking) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: canSubmit
+                            ? () => _submitCurrentExercise(question)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1CB0F6),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'CHECK',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
+          if (_answered && _feedback.isNotEmpty) _buildCorrectionPanel(),
           if (_showCelebration) const CelebrationWidget(),
         ],
       ),
@@ -644,7 +878,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.listening:
         return Column(
           children: [
-            const Text('🎧 What word do you hear?',
+            const Text('🎧 Listen and choose the correct answer',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
             const SizedBox(height: 12),
@@ -706,7 +940,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.speaking:
         return Column(
           children: [
-            const Text('🗣️ Say this word out loud!',
+            const Text('🗣️ Say this in English',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
             const SizedBox(height: 12),
@@ -803,7 +1037,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.writing:
         return Column(
           children: [
-            const Text('✏️ Write your answer',
+            const Text('✍️ Type your answer in English',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
             const SizedBox(height: 8),
             Text(question.emoji, style: const TextStyle(fontSize: 40)),
@@ -811,13 +1045,27 @@ class _QuizScreenState extends State<QuizScreen> {
             Text(question.question,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.volume_up_rounded, color: Color(0xFF2196F3), size: 20),
+                  onPressed: () => _audio.speak(question.answer),
+                ),
+                IconButton(
+                  icon: const Text('🐢', style: TextStyle(fontSize: 18)),
+                  onPressed: () => _audio.speakSlow(question.answer),
+                ),
+              ],
+            ),
           ],
         );
 
       case QuestionType.wordOrder:
         return Column(
           children: [
-            const Text('🧩 Build the sentence!',
+            const Text('🧩 Build the English sentence',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3366CC))),
             const SizedBox(height: 8),
             Text(question.question,
@@ -989,20 +1237,6 @@ class _QuizScreenState extends State<QuizScreen> {
               ],
             ),
           ),
-          if (!_answered)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _selectedWords.isEmpty ? null : _checkWordOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50), foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('CHECK', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              ),
-            ),
         ],
       );
     }
@@ -1025,22 +1259,8 @@ class _QuizScreenState extends State<QuizScreen> {
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300, width: 2)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF8F00), width: 2)),
             ),
-            onSubmitted: (_) => _checkWritingAnswer(),
+            onSubmitted: (_) => _submitCurrentExercise(question),
           ),
-          const SizedBox(height: 14),
-          if (!_answered)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _checkWritingAnswer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF8F00), foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('CHECK', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              ),
-            ),
         ],
       );
     }
@@ -1051,8 +1271,8 @@ class _QuizScreenState extends State<QuizScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         return AnswerButton(
-          text: _shuffledOptions[index].toUpperCase(),
-          onPressed: () => _checkAnswer(_shuffledOptions[index], index),
+          text: _shuffledOptions[index],
+          onPressed: () => _selectOption(index),
           state: _answerStates[index],
         );
       },

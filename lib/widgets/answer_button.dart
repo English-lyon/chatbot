@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AnswerState { normal, correct, wrong }
+enum AnswerState { normal, selected, correct, wrong }
 
 class AnswerButton extends StatefulWidget {
   final String text;
@@ -60,6 +60,15 @@ class _AnswerButtonState extends State<AnswerButton>
     }
   }
 
+  List<BoxShadow> _getShadow() {
+    final base = Colors.black.withValues(alpha: 0.08);
+    final lift = Colors.black.withValues(alpha: 0.04);
+    return [
+      BoxShadow(color: base, offset: const Offset(0, 3), blurRadius: 0),
+      BoxShadow(color: lift, offset: const Offset(0, 1), blurRadius: 6),
+    ];
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -68,6 +77,8 @@ class _AnswerButtonState extends State<AnswerButton>
 
   Color _getBackgroundColor() {
     switch (widget.state) {
+      case AnswerState.selected:
+        return const Color(0xFFE8F2FF);
       case AnswerState.correct:
         return Colors.green.shade100;
       case AnswerState.wrong:
@@ -79,6 +90,8 @@ class _AnswerButtonState extends State<AnswerButton>
 
   Color _getBorderColor() {
     switch (widget.state) {
+      case AnswerState.selected:
+        return const Color(0xFF1CB0F6);
       case AnswerState.correct:
         return Colors.green;
       case AnswerState.wrong:
@@ -95,14 +108,15 @@ class _AnswerButtonState extends State<AnswerButton>
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: _getBackgroundColor(),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _getBorderColor(), width: 2),
+        boxShadow: _getShadow(),
       ),
       child: Text(
         widget.text,
         style: const TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: Colors.black87,
         ),
         textAlign: TextAlign.center,
@@ -122,7 +136,10 @@ class _AnswerButtonState extends State<AnswerButton>
     }
 
     return GestureDetector(
-      onTap: widget.state == AnswerState.normal ? widget.onPressed : null,
+      onTap: (widget.state == AnswerState.normal ||
+              widget.state == AnswerState.selected)
+          ? widget.onPressed
+          : null,
       child: button,
     );
   }
