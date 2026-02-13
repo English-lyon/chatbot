@@ -16,7 +16,7 @@ class AIService {
 
   Future<String> _ask(String systemPrompt, String userMessage) async {
     try {
-      final url = '$_baseUrl/$_model:generateContent?key=${AIService.apiKey}';
+      const url = '$_baseUrl/$_model:generateContent?key=${AIService.apiKey}';
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -74,18 +74,38 @@ ${cefrLevel != null ? 'Your friend\'s English level: $cefrLevel\n' : ''}${topic 
   }
 
   Future<String> getHint(String question, String correctAnswer) async {
-    const systemPrompt = '''You're a kid (about 8 years old) helping a friend with an English question.
-Give a fun hint (not the answer!) like a friend would.
-Say something like "Hmm think about..." or "Oh oh I know! It sounds like..."
-Use an emoji and keep it to one short sentence.''';
-
-    final userMsg = 'Question: $question\nCorrect answer: $correctAnswer';
-
-    try {
-      return await _ask(systemPrompt, userMsg);
-    } catch (e) {
-      return 'Think about what you know! You can do it! 💪';
+    final answer = correctAnswer.trim();
+    if (answer.isEmpty) {
+      return 'Tiny hint: you can do it! 🌟';
     }
+
+    final clean = answer.replaceAll(RegExp(r'[^a-zA-Z ]'), '').trim();
+    final words = clean.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final lettersOnly = clean.replaceAll(' ', '');
+    final firstLetter = lettersOnly.isNotEmpty
+        ? lettersOnly[0].toUpperCase()
+        : answer[0].toUpperCase();
+
+    final lowerQuestion = question.toLowerCase();
+
+    if (words.length > 1) {
+      return 'Hint: ${words.length} words, starts with $firstLetter ✨';
+    }
+
+    if (lowerQuestion.contains('animal')) {
+      return 'Hint: think about the animal sound 🐾';
+    }
+
+    if (lettersOnly.length <= 3) {
+      return 'Hint: short word, starts with $firstLetter 🧩';
+    }
+
+    final startsWithVowel = RegExp(r'^[AEIOU]').hasMatch(firstLetter);
+    if (startsWithVowel) {
+      return 'Hint: it starts with a vowel: $firstLetter';
+    }
+
+    return 'Hint: ${lettersOnly.length} letters, starts with $firstLetter ⭐';
   }
 
   Future<String> getEncouragement(int score, int total) async {
