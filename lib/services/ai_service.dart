@@ -2,42 +2,45 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AIService {
-  static const String apiKey = String.fromEnvironment('OPENAI_API_KEY');
-  static const String _model = 'gpt-4o-mini';
-  static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
+  static const String apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const String _model = 'gemini-2.0-flash-lite';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
   AIService() {
     if (apiKey.isEmpty) {
-      print('WARNING: OPENAI_API_KEY is not set! Add it via --dart-define=OPENAI_API_KEY=your_key');
+      print('WARNING: GEMINI_API_KEY is not set! Add it via --dart-define=GEMINI_API_KEY=your_key');
     } else {
-      print('AIService: OpenAI API key loaded successfully.');
+      print('AIService: Gemini API key loaded successfully.');
     }
   }
 
   Future<String> _ask(String systemPrompt, String userMessage) async {
     try {
+      final url = '$_baseUrl/$_model:generateContent?key=${AIService.apiKey}';
       final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {'role': 'system', 'content': systemPrompt},
-            {'role': 'user', 'content': userMessage},
+          'system_instruction': {
+            'parts': [{'text': systemPrompt}]
+          },
+          'contents': [
+            {
+              'parts': [{'text': userMessage}]
+            }
           ],
-          'max_tokens': 200,
-          'temperature': 0.8,
+          'generationConfig': {
+            'maxOutputTokens': 200,
+            'temperature': 0.8,
+          },
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'] ?? 'Hmm, I lost my words! 😅';
+        return data['candidates'][0]['content']['parts'][0]['text'] ?? 'Hmm, I lost my words! 😅';
       } else {
-        print('OpenAI Error ${response.statusCode}: ${response.body}');
+        print('Gemini Error ${response.statusCode}: ${response.body}');
         return 'Oops! I had a little problem 😅 Can you try again?';
       }
     } catch (e, stackTrace) {
