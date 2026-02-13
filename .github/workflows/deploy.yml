@@ -33,7 +33,7 @@ jobs:
         run: flutter pub get
       
       - name: Build web
-        run: flutter build web --release --base-href "/chatbot/"
+        run: flutter build web --release --base-href "/chatbot/" --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

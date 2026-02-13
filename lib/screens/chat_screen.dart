@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({super.key});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -19,7 +19,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _messages.add(ChatMessage(
-      text: "Hello! I'm your English tutor! 👋\nAsk me anything about English!",
+      text: "Hi there! I'm Buddy, your English friend! �\nTap a button below or type to talk to me!",
       isUser: false,
     ));
   }
@@ -46,7 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     final response = await appState.aiService.chat(
       text,
-      level: appState.progress.level,
+      cefrLevel: appState.progress.cefrLevel,
       topic: 'general',
     );
 
@@ -73,11 +73,18 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: const Color(0xFFFFF8E1),
       appBar: AppBar(
-        title: const Text('💬 Chat with AI Tutor'),
-        backgroundColor: const Color(0xFF3366CC),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('� ', style: TextStyle(fontSize: 24)),
+            Text('Buddy - English Friend'),
+          ],
+        ),
+        backgroundColor: const Color(0xFFFF8F00),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -92,47 +99,96 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  SizedBox(width: 16),
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(width: 16),
+                  const Text('🐻', style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFF8F00),
+                    ),
                   ),
-                  SizedBox(width: 12),
-                  Text('AI is thinking...', style: TextStyle(color: Colors.grey)),
+                  const SizedBox(width: 8),
+                  Text('Buddy is thinking...',
+                      style: TextStyle(color: Colors.orange.shade700, fontSize: 14)),
                 ],
               ),
             ),
+          _buildQuickActions(),
           _buildInputArea(),
         ],
       ),
     );
   }
 
+  Widget _buildQuickActions() {
+    final suggestions = [
+      '👋 Hello!',
+      '🎨 Colors',
+      '🐶 Animals',
+      '🔢 Numbers',
+      '❓ Help me!',
+    ];
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: suggestions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          return ActionChip(
+            label: Text(
+              suggestions[index],
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: const Color(0xFFFFE0B2),
+            onPressed: () {
+              _textController.text = suggestions[index];
+              _sendMessage();
+            },
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildMessageBubble(ChatMessage message) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment:
             message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isUser) const SizedBox(width: 8),
+          if (!message.isUser)
+            const Padding(
+              padding: EdgeInsets.only(right: 6, bottom: 2),
+              child: Text('🐻', style: TextStyle(fontSize: 24)),
+            ),
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: message.isUser
-                    ? const Color(0xFF3366CC)
+                    ? const Color(0xFFFF8F00)
                     : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(18),
+                  topRight: const Radius.circular(18),
+                  bottomLeft: Radius.circular(message.isUser ? 18 : 4),
+                  bottomRight: Radius.circular(message.isUser ? 4 : 18),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -140,13 +196,18 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Text(
                 message.text,
                 style: TextStyle(
-                  fontSize: 16,
-                  color: message.isUser ? Colors.white : Colors.black87,
+                  fontSize: 17,
+                  height: 1.4,
+                  color: message.isUser ? Colors.white : Colors.brown.shade800,
                 ),
               ),
             ),
           ),
-          if (message.isUser) const SizedBox(width: 8),
+          if (message.isUser)
+            const Padding(
+              padding: EdgeInsets.only(left: 6, bottom: 2),
+              child: Text('🧒', style: TextStyle(fontSize: 24)),
+            ),
         ],
       ),
     );
@@ -154,12 +215,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -170,30 +231,41 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: TextField(
               controller: _textController,
+              style: const TextStyle(fontSize: 16),
               decoration: InputDecoration(
-                hintText: 'Type your question...',
+                hintText: 'Say something in English...',
+                hintStyle: TextStyle(color: Colors.orange.shade200),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF5F7FF),
+                fillColor: const Color(0xFFFFF3E0),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 12,
+                  vertical: 14,
                 ),
               ),
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF3366CC),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF8F00), Color(0xFFFFA726)],
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF8F00).withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.white),
+              icon: const Icon(Icons.send_rounded, color: Colors.white),
               onPressed: _sendMessage,
             ),
           ),

@@ -8,11 +8,11 @@ class AnswerButton extends StatefulWidget {
   final AnswerState state;
 
   const AnswerButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.state = AnswerState.normal,
-  }) : super(key: key);
+  });
 
   @override
   State<AnswerButton> createState() => _AnswerButtonState();

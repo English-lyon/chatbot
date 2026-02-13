@@ -6,14 +6,19 @@ import 'screens/lessons_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/progress_screen.dart';
+import 'screens/path_screen.dart';
+import 'screens/profile_setup_screen.dart';
+import 'screens/placement_test_screen.dart';
+import 'screens/profile_screen.dart';
 import 'models/lesson_content.dart';
+import 'models/learning_path.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +32,24 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Roboto',
           scaffoldBackgroundColor: const Color(0xFFF5F7FF),
         ),
-        home: const MenuScreen(),
+        home: const RootScreen(),
         onGenerateRoute: (settings) {
           switch (settings.name) {
+            case '/setup':
+              return MaterialPageRoute(
+                builder: (context) => const ProfileSetupScreen(),
+              );
+
+            case '/placement':
+              return MaterialPageRoute(
+                builder: (context) => const PlacementTestScreen(),
+              );
+
+            case '/path':
+              return MaterialPageRoute(
+                builder: (context) => const PathScreen(),
+              );
+
             case '/lessons':
               final moduleId = settings.arguments as String;
               return MaterialPageRoute(
@@ -38,6 +58,12 @@ class MyApp extends StatelessWidget {
             
             case '/quiz':
               final args = settings.arguments as Map<String, dynamic>;
+              if (args.containsKey('unit')) {
+                final unit = args['unit'] as PathUnit;
+                return MaterialPageRoute(
+                  builder: (context) => QuizScreen(unit: unit),
+                );
+              }
               final lesson = args['lesson'] as Lesson;
               final moduleId = args['moduleId'] as String;
               return MaterialPageRoute(
@@ -56,14 +82,47 @@ class MyApp extends StatelessWidget {
               return MaterialPageRoute(
                 builder: (context) => const ProgressScreen(),
               );
+
+            case '/profile':
+              return MaterialPageRoute(
+                builder: (context) => const ProfileScreen(),
+              );
             
             default:
               return MaterialPageRoute(
-                builder: (context) => const MenuScreen(),
+                builder: (context) => const RootScreen(),
               );
           }
         },
       ),
+    );
+  }
+}
+
+/// Decides which screen to show: setup, placement, or menu
+class RootScreen extends StatelessWidget {
+  const RootScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        if (appState.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (appState.needsSetup) {
+          return const ProfileSetupScreen();
+        }
+
+        if (appState.needsPlacement) {
+          return const PlacementTestScreen();
+        }
+
+        return const MenuScreen();
+      },
     );
   }
 }

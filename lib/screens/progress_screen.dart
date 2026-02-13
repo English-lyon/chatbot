@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 
 class ProgressScreen extends StatelessWidget {
-  const ProgressScreen({Key? key}) : super(key: key);
+  const ProgressScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -43,18 +43,43 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildStatsCard(progress) {
+    final cefrLevel = progress.cefrLevel as String;
+    final cefrColors = {
+      'A1-': const Color(0xFF66BB6A),
+      'A1': const Color(0xFF4CAF50),
+      'A1+': const Color(0xFF388E3C),
+      'A2-': const Color(0xFFAED581),
+      'A2': const Color(0xFF8BC34A),
+      'A2+': const Color(0xFF689F38),
+      'B1': const Color(0xFFFF9800),
+      'B2': const Color(0xFFFF5722),
+      'C1': const Color(0xFF9C27B0),
+      'C2': const Color(0xFFE91E63),
+    };
+    final cefrThresholds = [0, 200, 500, 1000, 2000, 3500];
+    final cefrLabels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    final currentIdx = cefrLabels.indexOf(cefrLevel);
+    final nextThreshold = currentIdx < 5 ? cefrThresholds[currentIdx + 1] : cefrThresholds[5];
+    final currentThreshold = cefrThresholds[currentIdx];
+    final progressToNext = currentIdx < 5
+        ? ((progress.totalPoints - currentThreshold) / (nextThreshold - currentThreshold)).clamp(0.0, 1.0)
+        : 1.0;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3366CC), Color(0xFF5577DD)],
+        gradient: LinearGradient(
+          colors: [
+            cefrColors[cefrLevel] ?? const Color(0xFF3366CC),
+            (cefrColors[cefrLevel] ?? const Color(0xFF3366CC)).withValues(alpha: 0.7),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3366CC).withOpacity(0.3),
+            color: (cefrColors[cefrLevel] ?? const Color(0xFF3366CC)).withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -63,23 +88,30 @@ class ProgressScreen extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            '🏆 Your Level',
+            '🏆 My English Level',
             style: TextStyle(
               fontSize: 18,
               color: Colors.white70,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '${progress.level}',
-            style: const TextStyle(
-              fontSize: 64,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              cefrLevel,
+              style: const TextStyle(
+                fontSize: 52,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             '⭐ ${progress.totalPoints} Total Points',
             style: const TextStyle(
@@ -88,6 +120,33 @@ class ProgressScreen extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+          if (currentIdx < 5) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: progressToNext as double,
+                      minHeight: 10,
+                      backgroundColor: Colors.white.withValues(alpha: 0.3),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Next: ${cefrLabels[currentIdx + 1]}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -101,7 +160,7 @@ class ProgressScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -161,7 +220,7 @@ class ProgressScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -205,7 +264,7 @@ class ProgressScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -258,7 +317,7 @@ class ProgressScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

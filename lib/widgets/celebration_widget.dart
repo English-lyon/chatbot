@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 class CelebrationWidget extends StatefulWidget {
-  const CelebrationWidget({Key? key}) : super(key: key);
+  const CelebrationWidget({super.key});
 
   @override
   State<CelebrationWidget> createState() => _CelebrationWidgetState();

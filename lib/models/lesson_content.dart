@@ -1,14 +1,29 @@
+/// Types of exercises for children
+enum QuestionType {
+  multipleChoice, // Read question + pick from options
+  listening,      // Hear a word via TTS, pick the right answer
+  speaking,       // See a word, say it aloud, self-assess
+  reading,        // Read an English sentence, answer a comprehension question
+  writing,        // Type the answer (no multiple choice)
+  wordOrder,      // Tap word chips to build a sentence (Duolingo-style)
+}
+
 class Question {
   final String question;
   final String answer;
   final List<String> options;
   final String emoji;
+  final QuestionType type;
+
+  // For backwards compat
+  bool get isAudio => type == QuestionType.listening;
 
   Question({
     required this.question,
     required this.answer,
     required this.options,
     required this.emoji,
+    this.type = QuestionType.multipleChoice,
   });
 
   Map<String, dynamic> toJson() => {
@@ -16,6 +31,7 @@ class Question {
         'answer': answer,
         'options': options,
         'emoji': emoji,
+        'type': type.name,
       };
 
   factory Question.fromJson(Map<String, dynamic> json) => Question(
@@ -23,6 +39,12 @@ class Question {
         answer: json['answer'],
         options: List<String>.from(json['options']),
         emoji: json['emoji'],
+        type: QuestionType.values.firstWhere(
+          (t) => t.name == json['type'],
+          orElse: () => (json['isAudio'] == true)
+              ? QuestionType.listening
+              : QuestionType.multipleChoice,
+        ),
       );
 }
 

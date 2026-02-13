@@ -4,6 +4,8 @@ class UserProgress {
   int level;
   int totalPoints;
   List<String> completedLessons;
+  Set<String> completedUnitIds;
+  Map<String, double> unitAccuracyHistory; // unitId -> accuracy (0.0 to 1.0)
   int currentStreak;
   int bestStreak;
   String? lastActivity;
@@ -14,14 +16,27 @@ class UserProgress {
     this.level = 1,
     this.totalPoints = 0,
     List<String>? completedLessons,
+    Set<String>? completedUnitIds,
+    Map<String, double>? unitAccuracyHistory,
     this.currentStreak = 0,
     this.bestStreak = 0,
     this.lastActivity,
     Map<String, ModuleProgress>? moduleProgress,
     List<String>? achievements,
   })  : completedLessons = completedLessons ?? [],
+        completedUnitIds = completedUnitIds ?? {},
+        unitAccuracyHistory = unitAccuracyHistory ?? {},
         moduleProgress = moduleProgress ?? {},
         achievements = achievements ?? [];
+
+  String get cefrLevel {
+    if (totalPoints < 200) return 'A1';
+    if (totalPoints < 500) return 'A2';
+    if (totalPoints < 1000) return 'B1';
+    if (totalPoints < 2000) return 'B2';
+    if (totalPoints < 3500) return 'C1';
+    return 'C2';
+  }
 
   void addPoints(int points) {
     totalPoints += points;
@@ -29,12 +44,12 @@ class UserProgress {
   }
 
   bool checkLevelUp() {
-    int pointsForNextLevel = level * 100;
-    if (totalPoints >= pointsForNextLevel) {
+    bool leveledUp = false;
+    while (totalPoints >= level * 100) {
       level++;
-      return true;
+      leveledUp = true;
     }
-    return false;
+    return leveledUp;
   }
 
   void completeLesson(String lessonId, String moduleId, int score) {
@@ -57,15 +72,43 @@ class UserProgress {
     checkAchievements();
   }
 
+  void completeUnit(String unitId, int score, {double accuracy = 1.0}) {
+    completedUnitIds.add(unitId);
+    unitAccuracyHistory[unitId] = accuracy;
+    updateStreak();
+    addPoints(score);
+    checkAchievements();
+  }
+
+  double get recentAccuracy {
+    if (unitAccuracyHistory.isEmpty) return 1.0;
+    final values = unitAccuracyHistory.values.toList();
+    final recent = values.length > 3 ? values.sublist(values.length - 3) : values;
+    return recent.reduce((a, b) => a + b) / recent.length;
+  }
+
   void updateStreak() {
     String today = DateTime.now().toIso8601String().split('T')[0];
-    if (lastActivity != today) {
-      currentStreak++;
-      if (currentStreak > bestStreak) {
-        bestStreak = currentStreak;
+    if (lastActivity == today) return;
+
+    if (lastActivity != null) {
+      final lastDate = DateTime.parse(lastActivity!);
+      final todayDate = DateTime.parse(today);
+      final diff = todayDate.difference(lastDate).inDays;
+
+      if (diff == 1) {
+        currentStreak++;
+      } else {
+        currentStreak = 1;
       }
-      lastActivity = today;
+    } else {
+      currentStreak = 1;
     }
+
+    if (currentStreak > bestStreak) {
+      bestStreak = currentStreak;
+    }
+    lastActivity = today;
   }
 
   String? checkAchievements() {
@@ -73,7 +116,7 @@ class UserProgress {
       {
         'id': 'first_lesson',
         'name': 'Premier pas',
-        'condition': completedLessons.length >= 1
+        'condition': completedLessons.isNotEmpty
       },
       {
         'id': 'five_lessons',
@@ -112,6 +155,8 @@ class UserProgress {
         'level': level,
         'totalPoints': totalPoints,
         'completedLessons': completedLessons,
+        'completedUnitIds': completedUnitIds.toList(),
+        'unitAccuracyHistory': unitAccuracyHistory,
         'currentStreak': currentStreak,
         'bestStreak': bestStreak,
         'lastActivity': lastActivity,
@@ -126,6 +171,11 @@ class UserProgress {
       level: json['level'] ?? 1,
       totalPoints: json['totalPoints'] ?? 0,
       completedLessons: List<String>.from(json['completedLessons'] ?? []),
+      completedUnitIds: Set<String>.from(json['completedUnitIds'] ?? []),
+      unitAccuracyHistory: (json['unitAccuracyHistory'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(key, (value as num).toDouble()),
+          ) ??
+          {},
       currentStreak: json['currentStreak'] ?? 0,
       bestStreak: json['bestStreak'] ?? 0,
       lastActivity: json['lastActivity'],

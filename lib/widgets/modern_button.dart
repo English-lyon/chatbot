@@ -10,7 +10,7 @@ class ModernButton extends StatelessWidget {
   final bool isSmall;
 
   const ModernButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor,
@@ -18,7 +18,7 @@ class ModernButton extends StatelessWidget {
     this.fontSize,
     this.icon,
     this.isSmall = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

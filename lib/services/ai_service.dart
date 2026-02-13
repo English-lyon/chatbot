@@ -1,34 +1,41 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIService {
-  static const String apiKey = 'AIzaSyBoTJFRccRK40MEaxQD0eeQJ1pyHJ5eYtw';
+  static const String _envKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const String _fallbackKey = 'AIzaSyBoTJFRccRK40MEaxQD0eeQJ1pyHJ5eYtw';
+  static String get apiKey => _envKey.isNotEmpty ? _envKey : _fallbackKey;
   late final GenerativeModel _model;
   
   AIService() {
+    print('AIService: using API key ${apiKey.substring(0, 8)}...');
     _model = GenerativeModel(
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       apiKey: apiKey,
     );
   }
 
-  Future<String> chat(String userMessage, {int? level, String? topic}) async {
+  Future<String> chat(String userMessage, {String? cefrLevel, String? topic}) async {
     try {
+      final levelGuidance = _getLevelGuidance(cefrLevel ?? 'A1');
       final systemPrompt = '''You are a friendly English teacher for children aged 5-10 years old.
 Your role is to:
 - Help children learn English in a fun and engaging way
 - Use simple words and short sentences
 - Be encouraging and positive
-- Correct mistakes gently
+- When a child makes a mistake, explain WHY it's wrong in a simple way, then give the correct answer
 - Use emojis to make learning fun
-- Adapt to the child's level
+- Adapt to the child's CEFR level
 - Answer questions about English words, grammar, and pronunciation
 - Create simple exercises when asked
+- Progressively challenge the child based on their level
+
+$levelGuidance
 
 Always respond in a way that's appropriate for young children.
-Keep responses short and clear.
+Keep responses short (2-3 sentences max) and clear.
 Use examples they can relate to (animals, toys, family, food, etc.).
 
-${level != null ? 'Child\'s current level: $level\n' : ''}${topic != null ? 'Current topic: $topic\n' : ''}
+${cefrLevel != null ? 'Child\'s CEFR level: $cefrLevel\n' : ''}${topic != null ? 'Current topic: $topic\n' : ''}
 Child says: $userMessage
 
 Respond in a friendly, educational way:''';
@@ -37,8 +44,10 @@ Respond in a friendly, educational way:''';
       final response = await _model.generateContent(content);
       
       return response.text ?? 'Sorry, I had trouble understanding. Try again! 😊';
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('AI Error: $e');
+      print('AI Error type: ${e.runtimeType}');
+      print('AI StackTrace: $stackTrace');
       return 'Oops! I had a little problem 😅 Can you try again?';
     }
   }
@@ -105,6 +114,41 @@ Keep it very short and simple!''';
     } catch (e) {
       print('Explain Error: $e');
       return 'The word \'$word\' is a great English word! Keep learning! 🌟';
+    }
+  }
+
+  String _getLevelGuidance(String cefrLevel) {
+    switch (cefrLevel) {
+      case 'A1':
+        return '''LEVEL GUIDANCE (A1 - Beginner):
+- Use only basic vocabulary (colors, numbers, animals, family)
+- Very short sentences (3-5 words)
+- Lots of repetition and encouragement
+- Focus on single words and basic phrases''';
+      case 'A2':
+        return '''LEVEL GUIDANCE (A2 - Elementary):
+- Use simple everyday vocabulary
+- Short sentences (5-8 words)
+- Introduce simple present tense
+- Simple questions and answers''';
+      case 'B1':
+        return '''LEVEL GUIDANCE (B1 - Intermediate):
+- Use wider vocabulary
+- More complex sentences
+- Introduce past tense and future
+- Encourage forming own sentences''';
+      case 'B2':
+        return '''LEVEL GUIDANCE (B2 - Upper Intermediate):
+- Use varied vocabulary
+- Complex sentences with conjunctions
+- Multiple tenses
+- Encourage expression of opinions''';
+      default:
+        return '''LEVEL GUIDANCE (Advanced):
+- Rich vocabulary
+- Complex grammar structures
+- Encourage creative expression
+- Discuss abstract topics simply''';
     }
   }
 }
