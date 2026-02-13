@@ -68,6 +68,14 @@ class AppState extends ChangeNotifier {
     for (final unitId in unitsToSkip) {
       _progress.completedUnitIds.add(unitId);
     }
+    // Give initial points so cefrLevel getter matches the placed level
+    final levelPoints = {
+      'A1': 0, 'A2': 200, 'B1': 500, 'B2': 1000, 'C1': 2000, 'C2': 3500,
+    };
+    final targetPoints = levelPoints[cefrLevel] ?? 0;
+    if (_progress.totalPoints < targetPoints) {
+      _progress.totalPoints = targetPoints;
+    }
     saveProfile();
     saveProgress();
   }
