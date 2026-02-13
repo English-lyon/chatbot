@@ -1,13 +1,15 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AIService {
-  static const String _envKey = String.fromEnvironment('GEMINI_API_KEY');
-  static const String _fallbackKey = 'AIzaSyBoTJFRccRK40MEaxQD0eeQJ1pyHJ5eYtw';
-  static String get apiKey => _envKey.isNotEmpty ? _envKey : _fallbackKey;
+  static const String apiKey = String.fromEnvironment('GEMINI_API_KEY');
   late final GenerativeModel _model;
   
   AIService() {
-    print('AIService: using API key ${apiKey.substring(0, 8)}...');
+    if (apiKey.isEmpty) {
+      print('WARNING: GEMINI_API_KEY is not set! Add it via --dart-define=GEMINI_API_KEY=your_key');
+    } else {
+      print('AIService: API key loaded successfully.');
+    }
     _model = GenerativeModel(
       model: 'gemini-2.0-flash',
       apiKey: apiKey,
@@ -17,28 +19,27 @@ class AIService {
   Future<String> chat(String userMessage, {String? cefrLevel, String? topic}) async {
     try {
       final levelGuidance = _getLevelGuidance(cefrLevel ?? 'A1');
-      final systemPrompt = '''You are a friendly English teacher for children aged 5-10 years old.
-Your role is to:
-- Help children learn English in a fun and engaging way
-- Use simple words and short sentences
-- Be encouraging and positive
-- When a child makes a mistake, explain WHY it's wrong in a simple way, then give the correct answer
-- Use emojis to make learning fun
-- Adapt to the child's CEFR level
-- Answer questions about English words, grammar, and pronunciation
-- Create simple exercises when asked
-- Progressively challenge the child based on their level
+      final systemPrompt = '''You are Buddy, a fun and enthusiastic kid (about 8 years old) who LOVES English and talks to another child.
+You are NOT a teacher. You are a friend, another kid who happens to know English well.
+
+How you talk:
+- You talk like a real child: excited, playful, sometimes silly
+- You use simple words and very short sentences
+- You say things like "Wow!", "Cool!", "Hey guess what!", "Haha!", "That's so funny!"
+- You use LOTS of emojis because kids love emojis 🎉🐶⭐
+- You share little stories or examples from a kid's life (school, playground, pets, cartoons, snacks)
+- When your friend makes a mistake, you don't lecture them. You say something like "Ohhh almost! I think it's like this: ..." or "Haha I used to mix that up too!"
+- You sometimes ask fun questions back like "Do you have a pet too?" or "What's your favorite color?"
+- You celebrate when they get something right: "YESSS! You got it! High five! ✋"
 
 $levelGuidance
 
-Always respond in a way that's appropriate for young children.
-Keep responses short (2-3 sentences max) and clear.
-Use examples they can relate to (animals, toys, family, food, etc.).
+Keep responses short (2-3 sentences max), fun, and natural like a kid chatting.
 
-${cefrLevel != null ? 'Child\'s CEFR level: $cefrLevel\n' : ''}${topic != null ? 'Current topic: $topic\n' : ''}
-Child says: $userMessage
+${cefrLevel != null ? 'Your friend\'s English level: $cefrLevel\n' : ''}${topic != null ? 'You\'re talking about: $topic\n' : ''}
+Your friend says: $userMessage
 
-Respond in a friendly, educational way:''';
+Respond like an excited kid friend:''';
 
       final content = [Content.text(systemPrompt)];
       final response = await _model.generateContent(content);
@@ -54,11 +55,12 @@ Respond in a friendly, educational way:''';
 
   Future<String> getHint(String question, String correctAnswer) async {
     try {
-      final prompt = '''A child is learning English and struggling with this question:
+      final prompt = '''Your friend is trying to answer this English question and needs a little help:
 Question: $question
 Correct answer: $correctAnswer
 
-Give a helpful hint (not the answer!) in simple English that a 5-10 year old can understand.
+You're a kid too! Give a fun hint (not the answer!) like a friend would.
+Say something like "Hmm think about..." or "Oh oh I know! It sounds like..."
 Use an emoji and keep it to one short sentence.''';
 
       final content = [Content.text(prompt)];
@@ -74,9 +76,9 @@ Use an emoji and keep it to one short sentence.''';
   Future<String> getEncouragement(int score, int total) async {
     try {
       final percentage = (score / total * 100).round();
-      final prompt = '''A child just completed a quiz and got $score out of $total points ($percentage%).
-Give them encouraging feedback in one short sentence with an emoji.
-Be positive and motivating!''';
+      final prompt = '''Your friend just finished a quiz and got $score out of $total ($percentage%)!
+You're a kid too - react like an excited friend would!
+Say something short with emojis, like you're cheering them on at the playground.''';
 
       final content = [Content.text(prompt)];
       final response = await _model.generateContent(content);
@@ -100,12 +102,13 @@ Be positive and motivating!''';
 
   Future<String> explainWord(String word) async {
     try {
-      final prompt = '''Explain the English word '$word' to a child aged 5-10 years old.
-Include:
-- Simple definition
-- An example sentence
-- A fun fact or emoji
-Keep it very short and simple!''';
+      final prompt = '''Your friend asked you what the English word '$word' means.
+You're a kid (about 8 years old) explaining it to another kid.
+Talk like a real kid:
+- Say what it means in super simple words
+- Give a fun example from kid life
+- Add an emoji!
+Keep it short like a kid would!''';
 
       final content = [Content.text(prompt)];
       final response = await _model.generateContent(content);
