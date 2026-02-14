@@ -11,22 +11,18 @@ import '../widgets/mascot_widget.dart';
 import '../services/audio_service.dart';
 
 class QuizScreen extends StatefulWidget {
-  final Lesson? lesson;
-  final String? moduleId;
   final PathUnit? unit;
 
   const QuizScreen({
     super.key,
-    this.lesson,
-    this.moduleId,
     this.unit,
   });
 
   List<Question> get questions =>
-      unit?.questions ?? lesson?.questions ?? [];
+      unit?.questions ?? [];
 
   String get title =>
-      unit?.title ?? lesson?.title ?? 'Quiz';
+      unit?.title ?? 'Quiz';
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -64,6 +60,15 @@ class _QuizScreenState extends State<QuizScreen> {
   List<String> _wordPool = [];       // available chips
   List<String> _selectedWords = [];  // chips the child tapped (sentence being built)
 
+  // Match pairs state
+  List<String> _pairItems = [];           // all items (FR + EN) for length check
+  List<String> _leftPairItems = [];       // FR words (shuffled independently)
+  List<String> _rightPairItems = [];      // EN words (shuffled independently)
+  Map<String, String> _pairMap = {};      // correct mapping {item: partner}
+  String? _selectedPairItem;              // currently tapped item
+  Set<String> _matchedPairs = {};         // successfully matched items
+  Set<String> _wrongPairItems = {};       // items that just got wrong (flash red)
+
   // Skip cooldown (5 min) — static so it persists across quiz screens
   static DateTime? _speakingSkipUntil;
   static DateTime? _listeningSkipUntil;
@@ -75,10 +80,18 @@ class _QuizScreenState extends State<QuizScreen> {
   int _highlightEnd = -1;
   String _listeningTextForHighlight = '';
 
+  // User profile
+  late Color _themeColor;
+  late String _userName;
+
   @override
   void initState() {
     super.initState();
+    final appState = Provider.of<AppState>(context, listen: false);
+    _themeColor = Color(appState.profile.favoriteColorValue);
+    _userName = appState.profile.name;
     _questionQueue = _buildDuolingoExerciseFlow(widget.questions);
+    _questionQueue.shuffle(); // Random order for every user
     _totalOriginal = _questionQueue.length;
     _initSpeech();
     _setupAudioCallbacks();
@@ -88,59 +101,99 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildCorrectionPanel() {
     final isCorrect = _feedback.startsWith('🌟');
-    final bg = isCorrect ? const Color(0xFFDFF6CC) : const Color(0xFFFFE0E0);
+    final bg = isCorrect ? const Color(0xFFD7FFB8) : const Color(0xFFFFDFE0);
     final border = isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
-    final text = isCorrect ? const Color(0xFF2E7D32) : const Color(0xFFB00020);
+    final textColor = isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
+    final icon = isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded;
 
     return Positioned(
       left: 0,
       right: 0,
       bottom: 0,
-      child: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-          decoration: BoxDecoration(
-            color: bg,
-            border: Border(top: BorderSide(color: border, width: 2)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isCorrect ? 'Great job!' : 'Not quite',
-                style: TextStyle(
-                  color: text,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1.0, end: 0.0),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, value * 200),
+            child: child,
+          );
+        },
+        child: SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: border.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _feedback,
-                style: TextStyle(color: text, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _nextQuestion,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: border,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: textColor, size: 32),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isCorrect ? 'Excellent !' : 'Oops !',
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 22,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _feedback,
+                            style: TextStyle(
+                              color: textColor.withValues(alpha: 0.85),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _nextQuestion,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: border,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'CONTINUE',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        letterSpacing: 1.0,
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'CONTINUE',
-                    style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.8),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -151,8 +204,18 @@ class _QuizScreenState extends State<QuizScreen> {
     final flow = <Question>[];
     for (int i = 0; i < source.length; i++) {
       final q = source[i];
+
+      // If the question already has a specific type (from learning_path),
+      // keep it as-is — don't override the author's intent
+      if (q.type != QuestionType.multipleChoice || q.pairs != null) {
+        flow.add(q);
+        continue;
+      }
+
+      // For plain multipleChoice questions (from lesson_content),
+      // auto-generate varied exercise types
       final distractors = _buildDistractors(q.answer, q.options);
-      final mode = i % 5;
+      final mode = i % 6;
 
       if (mode == 0) {
         flow.add(Question(
@@ -186,16 +249,39 @@ class _QuizScreenState extends State<QuizScreen> {
           emoji: '🗣️',
           type: QuestionType.speaking,
         ));
-      } else {
+      } else if (mode == 4) {
         final phrase = q.answer.contains(' ')
             ? q.answer
             : 'I like ${q.answer.toLowerCase()}';
+        // Use the original question as a French-style prompt for translation
+        final frenchPrompt = q.question.replaceAll(RegExp(r"How do you say '(.+)'.*"), r'$1')
+            .replaceAll(RegExp(r"What is .+\?"), q.answer);
         flow.add(Question(
-          question: 'Build the English sentence',
+          question: frenchPrompt,
           answer: phrase,
           options: _buildWordOrderOptions(phrase),
           emoji: '🧩',
           type: QuestionType.wordOrder,
+        ));
+      } else {
+        // Auto-generate a matchPairs from nearby questions
+        final pairs = <String, String>{};
+        for (int j = i; j < source.length && pairs.length < 4; j++) {
+          final s = source[j];
+          pairs[s.emoji] = s.answer;
+        }
+        // Fill up if not enough
+        if (pairs.length < 3) {
+          pairs['🐱'] = 'cat';
+          pairs['🐶'] = 'dog';
+        }
+        flow.add(Question(
+          question: 'Match the pairs',
+          answer: 'matched',
+          options: [],
+          emoji: '🔗',
+          type: QuestionType.matchPairs,
+          pairs: pairs,
         ));
       }
     }
@@ -243,26 +329,54 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _isOptionExercise(QuestionType type) {
     return type == QuestionType.multipleChoice ||
         type == QuestionType.listening ||
-        type == QuestionType.reading;
+        type == QuestionType.reading ||
+        type == QuestionType.fillBlank ||
+        type == QuestionType.conversation;
   }
 
   bool _canSubmitExercise(Question question) {
     if (_answered) return false;
+    // Speaking & matchPairs: always allow (acts as SKIP)
+    if (question.type == QuestionType.speaking) return true;
+    if (question.type == QuestionType.matchPairs) return true;
     if (_isOptionExercise(question.type)) return _selectedOptionIndex != null;
-    if (question.type == QuestionType.wordOrder) return _selectedWords.isNotEmpty;
+    if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) return _selectedWords.isNotEmpty;
     if (question.type == QuestionType.writing) return _writingController.text.trim().isNotEmpty;
     return false;
   }
 
   void _submitCurrentExercise(Question question) {
     if (_answered) return;
+    // Speaking: skip if not spoken, otherwise evaluate
+    if (question.type == QuestionType.speaking) {
+      if (_spokenText.isNotEmpty) {
+        _evaluateSpokenAnswer(_spokenText);
+      } else {
+        setState(() {
+          _answered = true;
+          _isListening = false;
+          _feedback = '\u{1F4A1} The word was "${question.answer}"';
+          _setMascot(MascotMood.idle, 'No worries! Let\'s continue \u{1F680}');
+        });
+      }
+      return;
+    }
+    // Match pairs: skip if not all matched
+    if (question.type == QuestionType.matchPairs) {
+      setState(() {
+        _answered = true;
+        _feedback = '\u{1F4A1} Skipped! Keep trying next time!';
+        _setMascot(MascotMood.idle, 'Let\'s move on! \u{1F680}');
+      });
+      return;
+    }
     if (_isOptionExercise(question.type)) {
       if (_selectedOptionIndex == null) return;
       final idx = _selectedOptionIndex!;
       _checkAnswer(_shuffledOptions[idx], idx);
       return;
     }
-    if (question.type == QuestionType.wordOrder) {
+    if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) {
       _checkWordOrder();
       return;
     }
@@ -306,12 +420,12 @@ class _QuizScreenState extends State<QuizScreen> {
   void _onQuestionReady() {
     final question = _questionQueue[_queueIndex];
     if (question.type == QuestionType.listening) {
-      _setMascot(MascotMood.listening, 'Listen carefully! 🎧');
+      _setMascot(MascotMood.listening, 'Listen carefully, $_userName! 🎧');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.speaking) {
-      _setMascot(MascotMood.speaking, 'Say it like me! 🗣️');
+      _setMascot(MascotMood.speaking, 'Say it like me, $_userName! 🗣️');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
@@ -323,9 +437,20 @@ class _QuizScreenState extends State<QuizScreen> {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.wordOrder) {
-      _setMascot(MascotMood.idle, 'Tap the words! 🧩');
+      _setMascot(MascotMood.thinking, 'Translate it, $_userName! 🇫🇷➡️🇬🇧');
+    } else if (question.type == QuestionType.matchPairs) {
+      _setMascot(MascotMood.idle, 'Match the pairs, $_userName! 🔗');
+    } else if (question.type == QuestionType.fillBlank) {
+      _setMascot(MascotMood.thinking, 'Fill in the blank! 📝');
+    } else if (question.type == QuestionType.conversation) {
+      _setMascot(MascotMood.speaking, 'Your turn, $_userName! 💬');
+    } else if (question.type == QuestionType.listenType) {
+      _setMascot(MascotMood.listening, 'Listen and type! 🎧✍️');
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) _audio.speak(question.answer);
+      });
     } else {
-      _setMascot(MascotMood.idle, 'Let\'s go! 🚀');
+      _setMascot(MascotMood.idle, 'Let\'s go, $_userName! 🚀');
     }
   }
 
@@ -358,7 +483,42 @@ class _QuizScreenState extends State<QuizScreen> {
     _highlightEnd = -1;
     _listeningTextForHighlight = '';
 
-    if (question.type == QuestionType.speaking || question.type == QuestionType.writing) {
+    // Reset match pairs state
+    _pairItems = [];
+    _leftPairItems = [];
+    _rightPairItems = [];
+    _pairMap = {};
+    _selectedPairItem = null;
+    _matchedPairs = {};
+    _wrongPairItems = {};
+
+    if (question.type == QuestionType.matchPairs && question.pairs != null) {
+      // Build two independently shuffled columns (FR left, EN right)
+      _leftPairItems = question.pairs!.keys.toList()..shuffle();
+      _rightPairItems = question.pairs!.values.toList()..shuffle();
+      _pairMap = {};
+      for (final entry in question.pairs!.entries) {
+        _pairMap[entry.key] = entry.value;
+        _pairMap[entry.value] = entry.key;
+      }
+      _pairItems = [..._leftPairItems, ..._rightPairItems];
+      _shuffledOptions = [];
+      _answerStates = [];
+    } else if (question.type == QuestionType.speaking || question.type == QuestionType.writing) {
+      _shuffledOptions = [];
+      _answerStates = [];
+    } else if (question.type == QuestionType.listenType) {
+      _listeningTextForHighlight = question.answer;
+      // Generate word tiles from answer + distractors (Duolingo style)
+      final answerWords = question.answer.split(' ').where((w) => w.trim().isNotEmpty).toList();
+      const distractorPool = ['the', 'a', 'is', 'and', 'my', 'it', 'has', 'not', 'can', 'big'];
+      final tiles = <String>[...answerWords];
+      for (final d in distractorPool) {
+        if (tiles.length >= answerWords.length + 3) break;
+        if (!tiles.contains(d)) tiles.add(d);
+      }
+      tiles.shuffle();
+      _wordPool = tiles;
       _shuffledOptions = [];
       _answerStates = [];
     } else if (question.type == QuestionType.wordOrder) {
@@ -409,6 +569,195 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
+  // ── Word tiles: draggable builders ──
+  Widget _buildDraggablePoolWord(int index) {
+    final word = _wordPool[index];
+    return Draggable<String>(
+      data: word,
+      feedback: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1CB0F6).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF1CB0F6), width: 2),
+          ),
+          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1CB0F6), decoration: TextDecoration.none)),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200, width: 1.5),
+          ),
+          child: Text(word, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
+        ),
+      ),
+      onDragCompleted: () {},
+      child: GestureDetector(
+        onTap: _answered ? null : () {
+          setState(() => _selectedWords.add(_wordPool.removeAt(index)));
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300, width: 1.5),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))],
+          ),
+          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDraggableSelectedWord(int index) {
+    final word = _selectedWords[index];
+    return Draggable<_SentenceWord>(
+      data: _SentenceWord(word, index),
+      feedback: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF4B4B).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFFF4B4B), width: 2),
+          ),
+          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFFFF4B4B), decoration: TextDecoration.none)),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade200, width: 1.5),
+          ),
+          child: Text(word, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
+        ),
+      ),
+      child: GestureDetector(
+        onTap: _answered ? null : () {
+          setState(() => _wordPool.add(_selectedWords.removeAt(index)));
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade400, width: 1.5),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))],
+          ),
+          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
+        ),
+      ),
+    );
+  }
+
+  // ── Match pairs: build a compact tile ──
+  Widget _buildPairTile(String item) {
+    final isMatched = _matchedPairs.contains(item);
+    final isSelected = _selectedPairItem == item;
+    final isWrong = _wrongPairItems.contains(item);
+
+    Color bg = Colors.white;
+    Color border = Colors.grey.shade300;
+    Color textColor = const Color(0xFF333333);
+
+    if (isMatched) {
+      bg = const Color(0xFF58CC02).withValues(alpha: 0.15);
+      border = const Color(0xFF58CC02);
+      textColor = const Color(0xFF58CC02);
+    } else if (isWrong) {
+      bg = const Color(0xFFFF4B4B).withValues(alpha: 0.15);
+      border = const Color(0xFFFF4B4B);
+      textColor = const Color(0xFFFF4B4B);
+    } else if (isSelected) {
+      bg = const Color(0xFF1CB0F6).withValues(alpha: 0.12);
+      border = const Color(0xFF1CB0F6);
+      textColor = const Color(0xFF1CB0F6);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: isMatched ? null : () => _onPairItemTap(item),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border, width: 2),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 3, offset: const Offset(0, 2))],
+          ),
+          child: Text(
+            item,
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Match pairs: tap logic ──
+  void _onPairItemTap(String item) {
+    if (_answered || _matchedPairs.contains(item)) return;
+
+    setState(() {
+      if (_selectedPairItem == null) {
+        // First tap: select this item
+        _selectedPairItem = item;
+        _wrongPairItems = {};
+      } else if (_selectedPairItem == item) {
+        // Tap same item: deselect
+        _selectedPairItem = null;
+      } else {
+        // Second tap: check if it's a match
+        final partner = _pairMap[_selectedPairItem!];
+        if (partner == item) {
+          // Correct match!
+          _matchedPairs.add(_selectedPairItem!);
+          _matchedPairs.add(item);
+          _selectedPairItem = null;
+          _wrongPairItems = {};
+          _audio.speakCheer();
+
+          // Check if all pairs matched
+          if (_matchedPairs.length == _pairItems.length) {
+            _answered = true;
+            _score += 25;
+            _showCelebration = true;
+            if (!_isRetryQuestion) _correctOnFirstTry++;
+            _feedback = '🌟 All pairs matched!';
+            _setMascot(MascotMood.happy, 'Perfect matching! 🎉');
+          }
+        } else {
+          // Wrong match
+          _wrongPairItems = {_selectedPairItem!, item};
+          _lives = (_lives - 1).clamp(0, 5);
+          _selectedPairItem = null;
+          _setMascot(MascotMood.sad, 'Try again! 💪');
+          // Clear wrong highlight after a short delay
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) setState(() => _wrongPairItems = {});
+          });
+        }
+      }
+    });
+  }
+
   void _checkAnswer(String selectedAnswer, int index) {
     if (_answered) return;
 
@@ -431,7 +780,7 @@ class _QuizScreenState extends State<QuizScreen> {
           _feedback = '🌟 You got it this time! Well done!';
         }
 
-        _setMascot(MascotMood.happy, 'Amazing! 🎉');
+        _setMascot(MascotMood.happy, 'Amazing, $_userName! 🎉');
         _audio.speakCheer();
       } else {
         _lives = (_lives - 1).clamp(0, 5);
@@ -444,7 +793,7 @@ class _QuizScreenState extends State<QuizScreen> {
           }
         }
         _feedback = '💡 The answer is "$correctAnswer".\n${_getExplanation(question)}';
-        _setMascot(MascotMood.sad, 'Almost! Try again next time 💪');
+        _setMascot(MascotMood.sad, 'Almost, $_userName! Try again 💪');
 
         if (!_isRetryQuestion) {
           final retry = _createRetryQuestion(question);
@@ -498,11 +847,31 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
+  /// Calculate letter similarity between two strings (0.0 to 1.0)
+  double _letterSimilarity(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return 0.0;
+    int matches = 0;
+    final bChars = b.split('');
+    final used = List.filled(bChars.length, false);
+    for (final c in a.split('')) {
+      for (int i = 0; i < bChars.length; i++) {
+        if (!used[i] && bChars[i] == c) {
+          matches++;
+          used[i] = true;
+          break;
+        }
+      }
+    }
+    return matches / b.length;
+  }
+
   void _evaluateSpokenAnswer(String spoken) {
     if (_answered) return;
     final expected = _questionQueue[_queueIndex].answer.toLowerCase().trim();
     final said = spoken.toLowerCase().trim();
-    final isCorrect = said.contains(expected) || expected.contains(said);
+    // Accept if 60% of letters match (kids won't pronounce perfectly)
+    final similarity = _letterSimilarity(said, expected);
+    final isCorrect = similarity >= 0.6 || said.contains(expected) || expected.contains(said);
 
     setState(() {
       _answered = true;
@@ -511,8 +880,8 @@ class _QuizScreenState extends State<QuizScreen> {
         _score += 25;
         _showCelebration = true;
         if (!_isRetryQuestion) _correctOnFirstTry++;
-        _feedback = '🌟 Great pronunciation!';
-        _setMascot(MascotMood.happy, 'Perfect! 🎤✨');
+        _feedback = '🌟 Great pronunciation, $_userName!';
+        _setMascot(MascotMood.happy, 'Perfect, $_userName! 🎤✨');
         _audio.speakCheer();
       } else {
         _lives = (_lives - 1).clamp(0, 5);
@@ -590,8 +959,6 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (widget.unit != null) {
       appState.completeUnit(widget.unit!.id, _score, accuracy: accuracy);
-    } else if (widget.lesson != null && widget.moduleId != null) {
-      appState.completeLesson(widget.lesson!.id, widget.moduleId!, _score);
     }
 
     if (!mounted) return;
@@ -636,6 +1003,7 @@ class _QuizScreenState extends State<QuizScreen> {
               Navigator.pop(context);
               setState(() {
                 _questionQueue = _buildDuolingoExerciseFlow(widget.questions);
+                _questionQueue.shuffle();
                 _queueIndex = 0;
                 _score = 0;
                 _totalOriginal = _questionQueue.length;
@@ -699,6 +1067,10 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.reading: return '📖';
       case QuestionType.writing: return '✏️';
       case QuestionType.wordOrder: return '🧩';
+      case QuestionType.matchPairs: return '🔗';
+      case QuestionType.fillBlank: return '📝';
+      case QuestionType.conversation: return '💬';
+      case QuestionType.listenType: return '🎧';
       case QuestionType.multipleChoice: return '';
     }
   }
@@ -754,10 +1126,10 @@ class _QuizScreenState extends State<QuizScreen> {
     final canSubmit = _canSubmitExercise(question);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: _themeColor.withValues(alpha: 0.04),
       appBar: AppBar(
         title: Text('${_queueIndex + 1}/${_questionQueue.length}${badge.isNotEmpty ? " $badge" : ""}${_isRetryQuestion ? " 🔁" : ""}'),
-        backgroundColor: const Color(0xFF3366CC),
+        backgroundColor: _themeColor,
         foregroundColor: Colors.white,
         actions: [
           // 🐢 slow button
@@ -834,7 +1206,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       ),
                     ),
                   ),
-                  if (!_answered && question.type != QuestionType.speaking) ...[
+                  if (!_answered) ...[
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
@@ -851,9 +1223,9 @@ class _QuizScreenState extends State<QuizScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text(
-                          'CHECK',
-                          style: TextStyle(
+                        child: Text(
+                          (question.type == QuestionType.speaking || question.type == QuestionType.matchPairs) ? 'SKIP' : 'CHECK',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.8,
@@ -1065,23 +1437,224 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.wordOrder:
         return Column(
           children: [
-            const Text('🧩 Build the English sentence',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3366CC))),
-            const SizedBox(height: 8),
-            Text(question.question,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            const Text('Traduis en anglais',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1CB0F6).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(child: Text('👩‍🏫', style: TextStyle(fontSize: 28))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _audio.speak(question.question),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.volume_up_rounded, color: Color(0xFF1CB0F6), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(question.question,
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF333333)))),
+                      ]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+
+      case QuestionType.matchPairs:
+        return const Column(
+          children: [
+            Text('🔗 Match the pairs',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: () => _audio.speak(question.answer),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
+            SizedBox(height: 4),
+            Text('Tap a word, then tap its match',
+              style: TextStyle(fontSize: 14, color: Colors.black54),
+              textAlign: TextAlign.center),
+          ],
+        );
+
+      case QuestionType.fillBlank:
+        return Column(
+          children: [
+            const Text('📝 Complete the sentence',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF8F00).withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFF8F00).withValues(alpha: 0.2)),
+              ),
+              child: Text(question.question,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF333333), height: 1.5),
+                textAlign: TextAlign.center),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.volume_up_rounded, color: Color(0xFF2196F3), size: 20),
+                  onPressed: () => _audio.speak(question.question.replaceAll('___', question.answer)),
+                ),
+              ],
+            ),
+          ],
+        );
+
+      case QuestionType.conversation:
+        final lines = question.question.split('\n');
+        return Column(
+          children: [
+            const Text('Complete the conversation',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+            const SizedBox(height: 16),
+            // Character + speech bubble
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7C4DFF).withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(child: Text('👩‍🏫', style: TextStyle(fontSize: 22))),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4), topRight: Radius.circular(16),
+                            bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16),
+                          ),
+                          border: Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          GestureDetector(
+                            onTap: () => _audio.speak(line.replaceAll(RegExp(r'[🧑🤖]\s*'), '')),
+                            child: const Icon(Icons.volume_up_rounded, color: Color(0xFF1CB0F6), size: 18),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text(line,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333)))),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Your turn slot
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.volume_up_rounded, size: 18, color: Color(0xFF2196F3)),
-                  SizedBox(width: 4),
-                  Text('Listen', style: TextStyle(fontSize: 13, color: Color(0xFF2196F3))),
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF58CC02).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(child: Text('🧒', style: TextStyle(fontSize: 22))),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF58CC02).withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF58CC02).withValues(alpha: 0.3), width: 1.5),
+                      ),
+                      child: const Text('Your turn...',
+                        style: TextStyle(fontSize: 15, color: Color(0xFF58CC02), fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
                 ],
               ),
+            ),
+          ],
+        );
+
+      case QuestionType.listenType:
+        return Column(
+          children: [
+            const Text('Tap what you hear',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1CB0F6).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(child: Text('👩‍🏫', style: TextStyle(fontSize: 28))),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    GestureDetector(
+                      onTap: () => _audio.speak(question.answer),
+                      child: Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1CB0F6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.volume_up_rounded, size: 26, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () => _audio.speakSlow(question.answer),
+                      child: Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1CB0F6).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.slow_motion_video_rounded, size: 26, color: Color(0xFF1CB0F6)),
+                      ),
+                    ),
+                  ]),
+                ),
+              ],
             ),
           ],
         );
@@ -1166,75 +1739,105 @@ class _QuizScreenState extends State<QuizScreen> {
       );
     }
 
-    // ── Word order: chip builder ──
-    if (question.type == QuestionType.wordOrder) {
+    // ── Match pairs: two-column layout (FR left, EN right) ──
+    if (question.type == QuestionType.matchPairs) {
+      return Expanded(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left column: French words
+            Expanded(child: Column(
+              children: [
+                for (final item in _leftPairItems) _buildPairTile(item),
+              ],
+            )),
+            const SizedBox(width: 10),
+            // Right column: English words
+            Expanded(child: Column(
+              children: [
+                for (final item in _rightPairItems) _buildPairTile(item),
+              ],
+            )),
+          ],
+        ),
+      );
+    }
+
+    // ── Word tiles: wordOrder & listenType (Duolingo style with drag & drop) ──
+    if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) {
+      final expectedWords = question.answer.split(' ').where((w) => w.trim().isNotEmpty).length;
       return Column(
         children: [
-          // Built sentence area
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey.shade300, width: 2),
-            ),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (int i = 0; i < _selectedWords.length; i++)
-                  GestureDetector(
-                    onTap: _answered ? null : () {
-                      setState(() {
-                        _wordPool.add(_selectedWords.removeAt(i));
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3366CC).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF3366CC), width: 1.5),
-                      ),
-                      child: Text(_selectedWords[i],
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3366CC))),
+          // Sentence build area — DragTarget that accepts words from pool
+          DragTarget<String>(
+            onWillAcceptWithDetails: (_) => !_answered,
+            onAcceptWithDetails: (details) {
+              setState(() {
+                final word = details.data;
+                final idx = _wordPool.indexOf(word);
+                if (idx != -1) {
+                  _selectedWords.add(_wordPool.removeAt(idx));
+                }
+              });
+            },
+            builder: (context, candidateData, rejectedData) {
+              final isHovering = candidateData.isNotEmpty;
+              return Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 52),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isHovering ? const Color(0xFF1CB0F6).withValues(alpha: 0.06) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (int i = 0; i < _selectedWords.length; i++)
+                          _buildDraggableSelectedWord(i),
+                      ],
                     ),
-                  ),
-                if (_selectedWords.isEmpty)
-                  Text('Tap the words below...', style: TextStyle(fontSize: 16, color: Colors.grey.shade400, fontStyle: FontStyle.italic)),
-              ],
-            ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity, height: 2,
+                      color: isHovering ? const Color(0xFF1CB0F6) : (_selectedWords.isEmpty ? Colors.grey.shade300 : Colors.grey.shade200),
+                    ),
+                    if (_selectedWords.length < expectedWords) ...[
+                      const SizedBox(height: 10),
+                      Container(width: double.infinity, height: 2, color: Colors.grey.shade200),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
-          const SizedBox(height: 16),
-          // Word pool
+          const SizedBox(height: 20),
+          // Word pool tiles — DragTarget that accepts words back from sentence
           Expanded(
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                for (int i = 0; i < _wordPool.length; i++)
-                  GestureDetector(
-                    onTap: _answered ? null : () {
-                      setState(() {
-                        _selectedWords.add(_wordPool.removeAt(i));
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))],
-                      ),
-                      child: Text(_wordPool[i],
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
-                    ),
-                  ),
-              ],
+            child: DragTarget<_SentenceWord>(
+              onWillAcceptWithDetails: (_) => !_answered,
+              onAcceptWithDetails: (details) {
+                setState(() {
+                  final idx = details.data.index;
+                  if (idx >= 0 && idx < _selectedWords.length) {
+                    _wordPool.add(_selectedWords.removeAt(idx));
+                  }
+                });
+              },
+              builder: (context, candidateData, rejectedData) {
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (int i = 0; i < _wordPool.length; i++)
+                      _buildDraggablePoolWord(i),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -1278,4 +1881,11 @@ class _QuizScreenState extends State<QuizScreen> {
       },
     );
   }
+}
+
+/// Data class for dragging a word from the sentence area back to the pool
+class _SentenceWord {
+  final String word;
+  final int index;
+  _SentenceWord(this.word, this.index);
 }

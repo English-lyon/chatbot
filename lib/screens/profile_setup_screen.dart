@@ -60,7 +60,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       favoriteColorValue: _selectedColorValue,
     );
     appState.completeSetup();
-    Navigator.pushReplacementNamed(context, '/placement');
+    Navigator.pushReplacementNamed(context, '/voice-setup');
   }
 
   @override

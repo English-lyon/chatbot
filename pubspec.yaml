@@ -23,7 +23,7 @@ dependencies:
   # Audio
   audioplayers: ^5.2.1
   flutter_tts: ^4.0.2
-  speech_to_text: ^6.6.0
+  speech_to_text: ^7.0.0
   
   # UI
   flutter_animate: ^4.5.0
@@ -41,7 +41,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
-  # Add assets here if needed
-  # assets:
-  #   - assets/images/
-  #   - assets/sounds/
+  assets:
+    - assets/sounds/

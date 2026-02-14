@@ -78,11 +78,11 @@ class _AnswerButtonState extends State<AnswerButton>
   Color _getBackgroundColor() {
     switch (widget.state) {
       case AnswerState.selected:
-        return const Color(0xFFE8F2FF);
+        return const Color(0xFFDDF4FF);
       case AnswerState.correct:
-        return Colors.green.shade100;
+        return const Color(0xFFD7FFB8);
       case AnswerState.wrong:
-        return Colors.red.shade100;
+        return const Color(0xFFFFDFE0);
       case AnswerState.normal:
         return Colors.white;
     }
@@ -93,33 +93,71 @@ class _AnswerButtonState extends State<AnswerButton>
       case AnswerState.selected:
         return const Color(0xFF1CB0F6);
       case AnswerState.correct:
-        return Colors.green;
+        return const Color(0xFF58CC02);
       case AnswerState.wrong:
-        return Colors.red;
+        return const Color(0xFFFF4B4B);
       case AnswerState.normal:
         return Colors.grey.shade300;
     }
   }
 
+  Color _getTextColor() {
+    switch (widget.state) {
+      case AnswerState.correct:
+        return const Color(0xFF58CC02);
+      case AnswerState.wrong:
+        return const Color(0xFFFF4B4B);
+      case AnswerState.selected:
+        return const Color(0xFF1CB0F6);
+      case AnswerState.normal:
+        return Colors.black87;
+    }
+  }
+
+  IconData? _getIcon() {
+    switch (widget.state) {
+      case AnswerState.correct:
+        return Icons.check_circle_rounded;
+      case AnswerState.wrong:
+        return Icons.cancel_rounded;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final icon = _getIcon();
+
     Widget button = Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: _getBackgroundColor(),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _getBorderColor(), width: 2),
-        boxShadow: _getShadow(),
+        border: Border.all(color: _getBorderColor(), width: 2.5),
+        boxShadow: widget.state == AnswerState.normal
+            ? _getShadow()
+            : [BoxShadow(color: _getBorderColor().withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Text(
-        widget.text,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: Colors.black87,
-        ),
-        textAlign: TextAlign.center,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              widget.text,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: _getTextColor(),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (icon != null) ...[
+            const SizedBox(width: 8),
+            Icon(icon, color: _getBorderColor(), size: 26),
+          ],
+        ],
       ),
     );
 

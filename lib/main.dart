@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_state.dart';
 import 'screens/menu_screen.dart';
-import 'screens/lessons_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/progress_screen.dart';
@@ -10,7 +9,7 @@ import 'screens/path_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'screens/placement_test_screen.dart';
 import 'screens/profile_screen.dart';
-import 'models/lesson_content.dart';
+import 'screens/voice_settings_screen.dart';
 import 'models/learning_path.dart';
 
 void main() {
@@ -50,27 +49,11 @@ class MyApp extends StatelessWidget {
                 builder: (context) => const PathScreen(),
               );
 
-            case '/lessons':
-              final moduleId = settings.arguments as String;
-              return MaterialPageRoute(
-                builder: (context) => LessonsScreen(moduleId: moduleId),
-              );
-            
             case '/quiz':
               final args = settings.arguments as Map<String, dynamic>;
-              if (args.containsKey('unit')) {
-                final unit = args['unit'] as PathUnit;
-                return MaterialPageRoute(
-                  builder: (context) => QuizScreen(unit: unit),
-                );
-              }
-              final lesson = args['lesson'] as Lesson;
-              final moduleId = args['moduleId'] as String;
+              final unit = args['unit'] as PathUnit;
               return MaterialPageRoute(
-                builder: (context) => QuizScreen(
-                  lesson: lesson,
-                  moduleId: moduleId,
-                ),
+                builder: (context) => QuizScreen(unit: unit),
               );
             
             case '/chat':
@@ -87,7 +70,17 @@ class MyApp extends StatelessWidget {
               return MaterialPageRoute(
                 builder: (context) => const ProfileScreen(),
               );
-            
+
+            case '/voice-setup':
+              return MaterialPageRoute(
+                builder: (context) => const VoiceSettingsScreen(isOnboarding: true),
+              );
+
+            case '/voice-settings':
+              return MaterialPageRoute(
+                builder: (context) => const VoiceSettingsScreen(),
+              );
+
             default:
               return MaterialPageRoute(
                 builder: (context) => const RootScreen(),

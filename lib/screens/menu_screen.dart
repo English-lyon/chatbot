@@ -35,7 +35,6 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
       body: SafeArea(
         child: Consumer<AppState>(
           builder: (context, appState, child) {
@@ -43,7 +42,10 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
               return const Center(child: CircularProgressIndicator());
             }
 
-            return SingleChildScrollView(
+            final themeColor = Color(appState.profile.favoriteColorValue);
+            return Container(
+              color: themeColor.withValues(alpha: 0.04),
+              child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
@@ -51,13 +53,14 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
                   const SizedBox(height: 20),
                   _buildStats(appState),
                   const SizedBox(height: 24),
-                  _buildBigPlayCard(context, appState),
+                  _buildBigPlayCard(context, appState, themeColor),
                   const SizedBox(height: 16),
                   _buildProgressBar(appState),
                   const SizedBox(height: 24),
                   _buildBottomButtons(context),
                 ],
               ),
+            ),
             );
           },
         ),
@@ -222,7 +225,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildBigPlayCard(BuildContext context, AppState appState) {
+  Widget _buildBigPlayCard(BuildContext context, AppState appState, Color themeColor) {
     final section = appState.currentSection;
     final chapter = appState.currentChapter;
     final unit = appState.currentUnit;
@@ -257,15 +260,15 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF8F00), Color(0xFFFFA726)],
+          gradient: LinearGradient(
+            colors: [themeColor, themeColor.withValues(alpha: 0.75)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF8F00).withValues(alpha: 0.35),
+              color: themeColor.withValues(alpha: 0.35),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),

@@ -9,7 +9,6 @@ class PathScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
       body: SafeArea(
         child: Consumer<AppState>(
           builder: (context, appState, child) {
@@ -27,13 +26,17 @@ class PathScreen extends StatelessWidget {
               currentIndex = allUnits.indexWhere((u) => u.id == currentUnit.id);
             }
 
-            return Column(
-              children: [
-                _buildTopBar(context, appState),
-                Expanded(
-                  child: _buildPath(context, appState, sections, currentIndex),
-                ),
-              ],
+            final themeColor = Color(appState.profile.favoriteColorValue);
+            return Container(
+              color: themeColor.withValues(alpha: 0.04),
+              child: Column(
+                children: [
+                  _buildTopBar(context, appState),
+                  Expanded(
+                    child: _buildPath(context, appState, sections, currentIndex),
+                  ),
+                ],
+              ),
             );
           },
         ),

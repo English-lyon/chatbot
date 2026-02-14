@@ -144,6 +144,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                // Voice settings
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/voice-settings'),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1CB0F6).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.record_voice_over_rounded, color: Color(0xFF1CB0F6), size: 24),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Voice Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('Change voice, speed & pitch', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
                 // Edit avatar
                 Container(
                   padding: const EdgeInsets.all(16),

@@ -7,11 +7,13 @@ class ProgressScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final themeColor = Color(appState.profile.favoriteColorValue);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: themeColor.withValues(alpha: 0.04),
       appBar: AppBar(
         title: const Text('📊 My Progress'),
-        backgroundColor: const Color(0xFF3366CC),
+        backgroundColor: themeColor,
         foregroundColor: Colors.white,
       ),
       body: Consumer<AppState>(
@@ -27,13 +29,13 @@ class ProgressScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 _buildStreakCard(progress),
                 const SizedBox(height: 20),
-                _buildLessonsCard(progress),
+                _buildUnitsCard(context),
                 const SizedBox(height: 20),
                 if (progress.achievements.isNotEmpty) ...[
                   _buildAchievementsCard(progress),
                   const SizedBox(height: 20),
                 ],
-                _buildModuleProgressCard(progress),
+                _buildPathProgressCard(context),
               ],
             ),
           );
@@ -212,7 +214,8 @@ class ProgressScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLessonsCard(progress) {
+  Widget _buildUnitsCard(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -229,27 +232,22 @@ class ProgressScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '📚 Learning Progress',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
+          const Text('📚 Learning Progress', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                '${progress.completedLessons.length} Lessons Completed',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
+          Row(children: [
+            const Icon(Icons.check_circle, color: Color(0xFF58CC02), size: 24),
+            const SizedBox(width: 12),
+            Text('${appState.completedUnitsCount}/${appState.totalUnitsCount} Units Completed', style: const TextStyle(fontSize: 16, color: Colors.black87)),
+          ]),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: appState.overallProgress,
+              minHeight: 10,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF58CC02)),
+            ),
           ),
         ],
       ),
@@ -305,10 +303,11 @@ class ProgressScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModuleProgressCard(progress) {
-    if (progress.moduleProgress.isEmpty) {
-      return const SizedBox.shrink();
-    }
+  Widget _buildPathProgressCard(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final section = appState.currentSection;
+    final chapter = appState.currentChapter;
+    if (section == null) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -316,57 +315,16 @@ class ProgressScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '📖 Module Progress',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
+          const Text('📖 Current Path', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 16),
-          ...progress.moduleProgress.entries.map((entry) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _getModuleName(entry.key),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        '${entry.value.completed} lessons',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Best: ${entry.value.bestScore} pts',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+          Text('Level: ${section.cefrLevel} — ${section.title}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87)),
+          if (chapter != null) ...[const SizedBox(height: 4), Text('${chapter.emoji} ${chapter.title}', style: TextStyle(fontSize: 14, color: Colors.grey[600]))],
         ],
       ),
     );
@@ -384,15 +342,4 @@ class ProgressScreen extends StatelessWidget {
     return names[id] ?? id;
   }
 
-  String _getModuleName(String id) {
-    final names = {
-      'colors': '🎨 Couleurs',
-      'animals': '🐾 Animaux',
-      'numbers': '🔢 Nombres',
-      'greetings': '👋 Salutations',
-      'food': '🍕 Nourriture',
-      'body': '👤 Corps humain',
-    };
-    return names[id] ?? id;
-  }
 }

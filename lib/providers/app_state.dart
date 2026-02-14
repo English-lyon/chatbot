@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_progress.dart';
 import '../models/user_profile.dart';
-import '../models/lesson_content.dart';
 import '../models/learning_path.dart';
 import '../services/storage_service.dart';
 import '../services/ai_service.dart';
@@ -80,27 +79,12 @@ class AppState extends ChangeNotifier {
     saveProgress();
   }
 
-  // --- Legacy module-based methods (kept for backward compat) ---
-
-  void completeLesson(String lessonId, String moduleId, int score) {
-    _progress.completeLesson(lessonId, moduleId, score);
-    saveProgress();
-  }
-
   void addPoints(int points) {
     _progress.addPoints(points);
     saveProgress();
   }
 
-  bool isLessonUnlocked(int lessonLevel) {
-    return lessonLevel <= _progress.level;
-  }
-
-  List<Module> getAvailableModules() {
-    return LessonContent.getAllModules();
-  }
-
-  // --- New Duolingo-style path methods ---
+  // --- Duolingo-style path methods ---
 
   PathUnit? get currentUnit =>
       LearningPath.getNextUnit(_progress.completedUnitIds);
