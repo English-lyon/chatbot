@@ -70,7 +70,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
         level: 'A1',
       ),
       _PlacementQuestion(
-        question: Question(question: 'Listen and choose the correct word', answer: 'blue', options: ['blue', 'red', 'green'], emoji: '🎧', type: QuestionType.listening),
+        question: Question(question: 'Écoute et choisis le bon mot', answer: 'blue', options: ['blue', 'red', 'green'], emoji: '🎧', type: QuestionType.listening),
         level: 'A1',
       ),
       _PlacementQuestion(
@@ -96,7 +96,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
         level: 'A2',
       ),
       _PlacementQuestion(
-        question: Question(question: 'Listen and choose the correct word', answer: 'banana', options: ['banana', 'apple', 'orange'], emoji: '🎧', type: QuestionType.listening),
+        question: Question(question: 'Écoute et choisis le bon mot', answer: 'banana', options: ['banana', 'apple', 'orange'], emoji: '🎧', type: QuestionType.listening),
         level: 'A2',
       ),
       _PlacementQuestion(
@@ -128,10 +128,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
       _results.add(isCorrect);
       if (isCorrect) {
         _correctCount++;
-        _feedback = '🌟 Great job!';
+        _feedback = '🌟 Bravo !';
         Provider.of<AppState>(context, listen: false).audioService.speakCheer();
       } else {
-        _feedback = '💡 The answer is "${question.question.answer}"';
+        _feedback = '💡 La réponse est "${question.question.answer}"';
       }
     });
   }
@@ -161,10 +161,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
       _results.add(isCorrect);
       if (isCorrect) {
         _correctCount++;
-        _feedback = '🌟 Perfect sentence!';
+        _feedback = '🌟 Phrase parfaite !';
         Provider.of<AppState>(context, listen: false).audioService.speakCheer();
       } else {
-        _feedback = '💡 The answer is "${question.question.answer}"';
+        _feedback = '💡 La réponse est "${question.question.answer}"';
       }
     });
   }
@@ -217,13 +217,13 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
             children: [
               Text(emoji, style: const TextStyle(fontSize: 60)),
               const SizedBox(height: 8),
-              Text('Welcome, $name!', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text('Bienvenue, $name !', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('$_correctCount/${_questions.length} correct', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('$_correctCount/${_questions.length} bonnes réponses', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(20),
@@ -234,7 +234,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Text('Your starting level:', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    const Text('Ton niveau de départ :', style: TextStyle(fontSize: 14, color: Colors.grey)),
                     const SizedBox(height: 4),
                     Text(placedLevel, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: Color(0xFF58CC02))),
                   ],
@@ -242,7 +242,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                unitsToSkip.isEmpty ? "Let's start from the beginning! 🚀" : "We skipped some easy lessons for you! 🎯",
+                unitsToSkip.isEmpty ? "On commence depuis le début ! \u{1F680}" : "On a passé les leçons faciles pour toi ! \u{1F3AF}",
                 style: const TextStyle(fontSize: 15), textAlign: TextAlign.center,
               ),
             ],
@@ -257,7 +257,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text("Start Learning! 🎉", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                child: const Text('C\'est parti ! \u{1F389}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ),
             ),
           ],
@@ -292,11 +292,11 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text('🎧 What word do you hear?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF333333)), textAlign: TextAlign.center),
+          const Text('🎧 Quel mot entends-tu ?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333)), textAlign: TextAlign.center),
         ]);
       case QuestionType.fillBlank:
         return Column(children: [
-          const Text('📝 Complete the sentence', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
+          const Text('📝 Complète la phrase', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
           const SizedBox(height: 12),
           Container(
             width: double.infinity, padding: const EdgeInsets.all(16),
@@ -310,7 +310,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
       case QuestionType.conversation:
         final lines = q.question.split('\n');
         return Column(children: [
-          const Text('Complete the conversation', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+          const Text('Complète la conversation', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
           const SizedBox(height: 14),
           for (final line in lines) Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -336,7 +336,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(color: const Color(0xFF58CC02).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFF58CC02).withValues(alpha: 0.3), width: 1.5)),
-              child: const Text('Your turn...', style: TextStyle(fontSize: 15, color: Color(0xFF58CC02), fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)))),
+              child: const Text('À toi...', style: TextStyle(fontSize: 16, color: Color(0xFF58CC02), fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)))),
           ])),
         ]);
       case QuestionType.reading:
@@ -344,7 +344,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
         final sentence = parts.length > 1 ? parts[0].replaceFirst('Read: ', '') : q.question;
         final comprehensionQ = parts.length > 1 ? parts[1] : '';
         return Column(children: [
-          const Text('📖 Read and answer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4CAF50))),
+          const Text('📖 Lis et réponds', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4CAF50))),
           const SizedBox(height: 8),
           Container(
             width: double.infinity, padding: const EdgeInsets.all(14),
@@ -413,7 +413,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text("Let's see what you know, $userName! 🔍", style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                  Text('Voyons ce que tu sais, $userName ! 🔍', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
                   const SizedBox(height: 20),
                   _buildQuestionArea(q),
                   const SizedBox(height: 20),
@@ -430,7 +430,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                               decoration: BoxDecoration(color: const Color(0xFF3366CC).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF3366CC), width: 1.5)),
                               child: Text(_selectedWords[i], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3366CC)))),
                           ),
-                        if (_selectedWords.isEmpty) Text('Tap the words below...', style: TextStyle(fontSize: 16, color: Colors.grey.shade400, fontStyle: FontStyle.italic)),
+                        if (_selectedWords.isEmpty) Text('Appuie sur les mots ci-dessous...', style: TextStyle(fontSize: 16, color: Colors.grey.shade400, fontStyle: FontStyle.italic)),
                       ]),
                     ),
                     const SizedBox(height: 16),
@@ -447,7 +447,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                     if (!_answered) SizedBox(width: double.infinity, child: ElevatedButton(
                       onPressed: _selectedWords.isEmpty ? null : _checkWordOrder,
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF58CC02), foregroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade300, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      child: const Text('CHECK', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                      child: const Text('VÉRIFIER', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
                     )),
                   ] else if (isOptionType) ...[
                     Expanded(child: ListView.separated(
@@ -524,7 +524,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                 child: ElevatedButton(
                   onPressed: _goToNext,
                   style: ElevatedButton.styleFrom(backgroundColor: border, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                  child: const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0)),
+                  child: const Text('CONTINUER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1.0)),
                 ),
               ),
             ]),

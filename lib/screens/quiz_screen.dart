@@ -45,7 +45,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // Mascot
   MascotMood _mascotMood = MascotMood.idle;
-  String _mascotSpeech = 'Let\'s go! 🚀';
+  String _mascotSpeech = 'C\'est parti ! \u{1F680}';
 
   // Speaking: speech recognition
   final stt.SpeechToText _speech = stt.SpeechToText();
@@ -160,7 +160,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             style: TextStyle(
                               color: textColor.withValues(alpha: 0.85),
                               fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                              fontSize: 16,
                             ),
                           ),
                         ],
@@ -183,10 +183,10 @@ class _QuizScreenState extends State<QuizScreen> {
                       ),
                     ),
                     child: const Text(
-                      'CONTINUE',
+                      'CONTINUER',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 16,
+                        fontSize: 18,
                         letterSpacing: 1.0,
                       ),
                     ),
@@ -227,23 +227,24 @@ class _QuizScreenState extends State<QuizScreen> {
         ));
       } else if (mode == 1) {
         flow.add(Question(
-          question: 'Listen and choose the correct word',
+          question: 'Écoute et choisis le bon mot',
           answer: q.answer,
           options: distractors,
           emoji: '🎧',
           type: QuestionType.listening,
         ));
       } else if (mode == 2) {
+        // Fill-in-the-blank instead of writing (kids can't type)
         flow.add(Question(
-          question: 'Type the answer in English: ${q.question}',
+          question: 'Écoute et choisis le bon mot',
           answer: q.answer,
           options: distractors,
-          emoji: '✍️',
-          type: QuestionType.writing,
+          emoji: '🎧',
+          type: QuestionType.listening,
         ));
       } else if (mode == 3) {
         flow.add(Question(
-          question: 'Say this in English: ${q.answer}',
+          question: 'Dis ce mot en anglais : ${q.answer}',
           answer: q.answer,
           options: distractors,
           emoji: '🗣️',
@@ -363,8 +364,8 @@ class _QuizScreenState extends State<QuizScreen> {
         setState(() {
           _answered = true;
           _isListening = false;
-          _feedback = '\u{1F4A1} The word was "${question.answer}"';
-          _setMascot(MascotMood.idle, 'No worries! Let\'s continue \u{1F680}');
+          _feedback = '\u{1F4A1} Le mot était "${question.answer}"';
+          _setMascot(MascotMood.idle, 'Pas grave ! On continue \u{1F680}');
         });
       }
       return;
@@ -373,8 +374,8 @@ class _QuizScreenState extends State<QuizScreen> {
     if (question.type == QuestionType.matchPairs) {
       setState(() {
         _answered = true;
-        _feedback = '\u{1F4A1} Skipped! Keep trying next time!';
-        _setMascot(MascotMood.idle, 'Let\'s move on! \u{1F680}');
+        _feedback = '\u{1F4A1} Passé ! Tu réussiras la prochaine fois !';
+        _setMascot(MascotMood.idle, 'On continue ! \u{1F680}');
       });
       return;
     }
@@ -428,37 +429,37 @@ class _QuizScreenState extends State<QuizScreen> {
   void _onQuestionReady() {
     final question = _questionQueue[_queueIndex];
     if (question.type == QuestionType.listening) {
-      _setMascot(MascotMood.listening, 'Listen carefully, $_userName! 🎧');
+      _setMascot(MascotMood.listening, 'Écoute bien, $_userName ! \u{1F3A7}');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.speaking) {
-      _setMascot(MascotMood.speaking, 'Say it like me, $_userName! 🗣️');
+      _setMascot(MascotMood.speaking, 'Répète après moi, $_userName ! \u{1F5E3}\u{FE0F}');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.reading) {
-      _setMascot(MascotMood.thinking, 'Read carefully! 📖');
+      _setMascot(MascotMood.thinking, 'Lis bien ! \u{1F4D6}');
     } else if (question.type == QuestionType.writing) {
-      _setMascot(MascotMood.thinking, 'Type in English! ✏️');
+      _setMascot(MascotMood.thinking, 'Écris en anglais ! \u{270F}\u{FE0F}');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.wordOrder) {
-      _setMascot(MascotMood.thinking, 'Translate it, $_userName! 🇫🇷➡️🇬🇧');
+      _setMascot(MascotMood.thinking, 'Traduis, $_userName ! \u{1F1EB}\u{1F1F7}\u{27A1}\u{FE0F}\u{1F1EC}\u{1F1E7}');
     } else if (question.type == QuestionType.matchPairs) {
-      _setMascot(MascotMood.idle, 'Match the pairs, $_userName! 🔗');
+      _setMascot(MascotMood.idle, 'Trouve les paires, $_userName ! \u{1F517}');
     } else if (question.type == QuestionType.fillBlank) {
-      _setMascot(MascotMood.thinking, 'Fill in the blank! 📝');
+      _setMascot(MascotMood.thinking, 'Complète la phrase ! \u{1F4DD}');
     } else if (question.type == QuestionType.conversation) {
-      _setMascot(MascotMood.speaking, 'Your turn, $_userName! 💬');
+      _setMascot(MascotMood.speaking, 'À toi, $_userName ! \u{1F4AC}');
     } else if (question.type == QuestionType.listenType) {
-      _setMascot(MascotMood.listening, 'Listen and type! 🎧✍️');
+      _setMascot(MascotMood.listening, 'Écoute et écris ! \u{1F3A7}\u{270D}\u{FE0F}');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
     } else {
-      _setMascot(MascotMood.idle, 'Let\'s go, $_userName! 🚀');
+      _setMascot(MascotMood.idle, 'C\'est parti, $_userName ! \u{1F680}');
     }
   }
 
@@ -550,7 +551,7 @@ class _QuizScreenState extends State<QuizScreen> {
         ? q.options
         : [q.answer, 'cat', 'dog', 'hello'];
     return Question(
-      question: q.question.replaceFirst('Say this', 'What is this').replaceFirst('out loud:', '?'),
+      question: q.question.replaceFirst('Say this', 'What is this').replaceFirst('out loud:', '?').replaceFirst('Dis ce mot en anglais', 'Quel est ce mot'),
       answer: q.answer,
       options: mcOptions,
       emoji: q.emoji,
@@ -591,19 +592,19 @@ class _QuizScreenState extends State<QuizScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF1CB0F6), width: 2),
           ),
-          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1CB0F6), decoration: TextDecoration.none)),
+          child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1CB0F6), decoration: TextDecoration.none)),
         ),
       ),
       childWhenDragging: Opacity(
         opacity: 0.3,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200, width: 1.5),
           ),
-          child: Text(word, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
+          child: Text(word, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
         ),
       ),
       onDragCompleted: () {},
@@ -612,14 +613,14 @@ class _QuizScreenState extends State<QuizScreen> {
           setState(() => _selectedWords.add(_wordPool.removeAt(index)));
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade300, width: 1.5),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))],
           ),
-          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
+          child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
         ),
       ),
     );
@@ -638,19 +639,19 @@ class _QuizScreenState extends State<QuizScreen> {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: const Color(0xFFFF4B4B), width: 2),
           ),
-          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFFFF4B4B), decoration: TextDecoration.none)),
+          child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFFFF4B4B), decoration: TextDecoration.none)),
         ),
       ),
       childWhenDragging: Opacity(
         opacity: 0.3,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.grey.shade200, width: 1.5),
           ),
-          child: Text(word, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
+          child: Text(word, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
         ),
       ),
       child: GestureDetector(
@@ -748,15 +749,15 @@ class _QuizScreenState extends State<QuizScreen> {
             _score += 25;
             _showCelebration = true;
             if (!_isRetryQuestion) _correctOnFirstTry++;
-            _feedback = '🌟 All pairs matched!';
-            _setMascot(MascotMood.happy, 'Perfect matching! 🎉');
+            _feedback = '🌟 Toutes les paires trouvées !';
+            _setMascot(MascotMood.happy, 'Parfait ! 🎉');
           }
         } else {
           // Wrong match
           _wrongPairItems = {_selectedPairItem!, item};
           _lives = (_lives - 1).clamp(0, 5);
           _selectedPairItem = null;
-          _setMascot(MascotMood.sad, 'Try again! 💪');
+          _setMascot(MascotMood.sad, 'Réessaie ! 💪');
           // Clear wrong highlight after a short delay
           Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted) setState(() => _wrongPairItems = {});
@@ -783,12 +784,12 @@ class _QuizScreenState extends State<QuizScreen> {
 
         if (!_isRetryQuestion) {
           _correctOnFirstTry++;
-          _feedback = '🌟 Super! That\'s right!';
+          _feedback = '🌟 Super ! Bravo !';
         } else {
-          _feedback = '🌟 You got it this time! Well done!';
+          _feedback = '🌟 Tu as trouvé cette fois ! Bien joué !';
         }
 
-        _setMascot(MascotMood.happy, 'Amazing, $_userName! 🎉');
+        _setMascot(MascotMood.happy, 'Génial, $_userName ! 🎉');
         _audio.speakCheer();
       } else {
         _lives = (_lives - 1).clamp(0, 5);
@@ -800,8 +801,8 @@ class _QuizScreenState extends State<QuizScreen> {
             _answerStates[correctIndex] = AnswerState.correct;
           }
         }
-        _feedback = '💡 The answer is "$correctAnswer".\n${_getExplanation(question)}';
-        _setMascot(MascotMood.sad, 'Almost, $_userName! Try again 💪');
+        _feedback = '💡 La réponse est "$correctAnswer".\n${_getExplanation(question)}';
+        _setMascot(MascotMood.sad, 'Presque, $_userName ! Réessaie 💪');
 
         if (!_isRetryQuestion) {
           final retry = _createRetryQuestion(question);
@@ -833,7 +834,7 @@ class _QuizScreenState extends State<QuizScreen> {
       _isListening = true;
       _spokenText = '';
       _mascotMood = MascotMood.listening;
-      _mascotSpeech = 'I\'m listening... 👂';
+      _mascotSpeech = 'J\'\u00e9coute... 👂';
     });
     await _speech.listen(
       onResult: (result) {
@@ -899,13 +900,13 @@ class _QuizScreenState extends State<QuizScreen> {
         _score += 25;
         _showCelebration = true;
         if (!_isRetryQuestion) _correctOnFirstTry++;
-        _feedback = '🌟 Great pronunciation, $_userName!';
-        _setMascot(MascotMood.happy, 'Perfect, $_userName! 🎤✨');
+        _feedback = '🌟 Super prononciation, $_userName !';
+        _setMascot(MascotMood.happy, 'Parfait, $_userName ! 🎤✨');
         _audio.speakCheer();
       } else {
         _lives = (_lives - 1).clamp(0, 5);
-        _feedback = '💪 You said "$spoken" — the word is "$expected"';
-        _setMascot(MascotMood.sad, 'Good try! Listen again 🔊');
+        _feedback = '💪 Tu as dit "$spoken" \u2014 le mot est "$expected"';
+        _setMascot(MascotMood.sad, 'Bien essayé ! Réécoute 🔊');
         _audio.speak(expected);
       }
     });
@@ -916,15 +917,15 @@ class _QuizScreenState extends State<QuizScreen> {
     String retryQ;
     final q = original.question.toLowerCase();
     if (q.contains('color') || q.contains('colour')) {
-      retryQ = 'Try again! Which color is "$a"? ${original.emoji}';
+      retryQ = 'Réessaie ! Quelle couleur est "$a" ? ${original.emoji}';
     } else if (q.contains('animal') || q.contains('says')) {
-      retryQ = 'Let\'s try once more! What animal is this? ${original.emoji}';
+      retryQ = 'Encore une fois ! Quel animal est-ce ? ${original.emoji}';
     } else if (q.contains('how many') || q.contains('number')) {
-      retryQ = 'One more try! What is the number? ${original.emoji}';
+      retryQ = 'Encore un essai ! Quel est le nombre ? ${original.emoji}';
     } else if (q.contains('how do you say')) {
-      retryQ = 'Try again! How do you say this in English? ${original.emoji}';
+      retryQ = 'Réessaie ! Comment dit-on en anglais ? ${original.emoji}';
     } else {
-      retryQ = 'Let\'s try again! ${original.question} ${original.emoji}';
+      retryQ = 'On réessaie ! ${original.question} ${original.emoji}';
     }
     // Retries for writing/wordOrder fall back to multipleChoice
     final retryType = (original.type == QuestionType.writing || original.type == QuestionType.wordOrder)
@@ -942,11 +943,11 @@ class _QuizScreenState extends State<QuizScreen> {
   String _getExplanation(Question question) {
     final q = question.question.toLowerCase();
     final a = question.answer;
-    if (q.contains('color') || q.contains('colour')) return 'The color is $a! ${question.emoji}';
-    if (q.contains('animal') || q.contains('says')) return 'This animal is a $a! ${question.emoji}';
-    if (q.contains('how many') || q.contains('number')) return 'The number is $a! ${question.emoji}';
-    if (q.contains('how do you say')) return 'In English we say "$a"! ${question.emoji}';
-    return 'The correct word is "$a" ${question.emoji}';
+    if (q.contains('color') || q.contains('colour')) return 'La couleur est $a ! ${question.emoji}';
+    if (q.contains('animal') || q.contains('says')) return 'Cet animal est un $a ! ${question.emoji}';
+    if (q.contains('how many') || q.contains('number')) return 'Le nombre est $a ! ${question.emoji}';
+    if (q.contains('how do you say') || q.contains('comment dit-on')) return 'En anglais on dit "$a" ! ${question.emoji}';
+    return 'Le mot correct est "$a" ${question.emoji}';
   }
 
   void _nextQuestion() {
@@ -957,9 +958,9 @@ class _QuizScreenState extends State<QuizScreen> {
         _answered = false;
         _feedback = '';
         _isRetryQuestion = _queueIndex >= _totalOriginal ||
-            _questionQueue[_queueIndex].question.startsWith('Try again') ||
-            _questionQueue[_queueIndex].question.startsWith('Let\'s try') ||
-            _questionQueue[_queueIndex].question.startsWith('One more');
+            _questionQueue[_queueIndex].question.startsWith('Réessaie') ||
+            _questionQueue[_queueIndex].question.startsWith('Encore') ||
+            _questionQueue[_queueIndex].question.startsWith('On réessaie');
         _prepareCurrentQuestion();
         _onQuestionReady();
       } else {
@@ -984,8 +985,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final mascotEmoji = percentage >= 80 ? '🥳' : (percentage >= 50 ? '🐻' : '💪');
     final mascotText = percentage >= 80
-        ? 'Perfect lesson!'
-        : (percentage >= 50 ? 'Good job!' : 'Keep practicing!');
+        ? 'Leçon parfaite !'
+        : (percentage >= 50 ? 'Bien joué !' : 'Continue comme ça !');
 
     showDialog(
       context: context,
@@ -1002,8 +1003,8 @@ class _QuizScreenState extends State<QuizScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$percentage% correct', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            Text('$_correctOnFirstTry / $_totalOriginal on first try', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+            Text('$percentage% de bonnes réponses', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            Text('$_correctOnFirstTry / $_totalOriginal du premier coup', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1035,7 +1036,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 _onQuestionReady();
               });
             },
-            child: const Text('🔄 Retry'),
+            child: const Text('🔄 Rejouer'),
           ),
           ElevatedButton(
             onPressed: () { Navigator.pop(context); Navigator.pop(context); },
@@ -1043,7 +1044,7 @@ class _QuizScreenState extends State<QuizScreen> {
               backgroundColor: const Color(0xFF4CAF50), foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text(widget.unit != null ? 'Continue ▶' : '🏠 Menu'),
+            child: Text(widget.unit != null ? 'Continuer ▶' : '🏠 Menu'),
           ),
         ],
       ),
@@ -1071,7 +1072,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _showHint() async {
-    _setMascot(MascotMood.thinking, 'Hmm let me think... 🤔');
+    _setMascot(MascotMood.thinking, 'Hmm laisse-moi réfléchir... 🤔');
     final appState = Provider.of<AppState>(context, listen: false);
     final question = _questionQueue[_queueIndex];
     final hint = await appState.aiService.getHint(question.question, question.answer);
@@ -1243,7 +1244,7 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                         child: Text(
-                          (question.type == QuestionType.speaking || question.type == QuestionType.matchPairs) ? 'SKIP' : 'CHECK',
+                          (question.type == QuestionType.speaking || question.type == QuestionType.matchPairs) ? 'PASSER' : 'VÉRIFIER',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -1269,8 +1270,8 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.listening:
         return Column(
           children: [
-            const Text('🎧 Listen and choose the correct answer',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            const Text('🎧 Écoute et choisis la bonne réponse',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Row(
@@ -1322,7 +1323,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: TextButton(
                   onPressed: () => _skipExercise(QuestionType.listening),
-                  child: Text('Skip listening (5 min)', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  child: Text('Passer l\'\u00e9coute (5 min)', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                 ),
               ),
           ],
@@ -1331,8 +1332,8 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.speaking:
         return Column(
           children: [
-            const Text('🗣️ Say this in English',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            const Text('🗣️ Dis ce mot en anglais',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(question.emoji, style: const TextStyle(fontSize: 48)),
@@ -1359,7 +1360,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     children: [
                       Icon(Icons.volume_up_rounded, size: 18, color: Color(0xFF2196F3)),
                       SizedBox(width: 4),
-                      Text('Hear it', style: TextStyle(fontSize: 13, color: Color(0xFF2196F3))),
+                      Text('Écouter', style: TextStyle(fontSize: 14, color: Color(0xFF2196F3))),
                     ],
                   ),
                 ),
@@ -1371,7 +1372,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     children: [
                       Text('🐢', style: TextStyle(fontSize: 16)),
                       SizedBox(width: 4),
-                      Text('Slow', style: TextStyle(fontSize: 13, color: Color(0xFF2196F3))),
+                      Text('Lent', style: TextStyle(fontSize: 14, color: Color(0xFF2196F3))),
                     ],
                   ),
                 ),
@@ -1383,7 +1384,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 padding: const EdgeInsets.only(top: 6),
                 child: TextButton(
                   onPressed: () => _skipExercise(QuestionType.speaking),
-                  child: Text('Skip speaking (5 min)', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  child: Text('Passer la parole (5 min)', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                 ),
               ),
           ],
@@ -1395,8 +1396,8 @@ class _QuizScreenState extends State<QuizScreen> {
         final comprehensionQ = parts.length > 1 ? parts[1] : '';
         return Column(
           children: [
-            const Text('📖 Read and answer',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4CAF50))),
+            const Text('📖 Lis et réponds',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4CAF50))),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -1428,8 +1429,8 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.writing:
         return Column(
           children: [
-            const Text('✍️ Type your answer in English',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
+            const Text('✍️ Écris ta réponse en anglais',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
             const SizedBox(height: 8),
             Text(question.emoji, style: const TextStyle(fontSize: 40)),
             const SizedBox(height: 4),
@@ -1499,12 +1500,12 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.matchPairs:
         return const Column(
           children: [
-            Text('🔗 Match the pairs',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            Text('🔗 Trouve les paires',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
             SizedBox(height: 4),
-            Text('Tap a word, then tap its match',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
+            Text('Appuie sur un mot, puis sur son équivalent',
+              style: TextStyle(fontSize: 15, color: Colors.black54),
               textAlign: TextAlign.center),
           ],
         );
@@ -1512,8 +1513,8 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.fillBlank:
         return Column(
           children: [
-            const Text('📝 Complete the sentence',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
+            const Text('📝 Complète la phrase',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
@@ -1543,7 +1544,7 @@ class _QuizScreenState extends State<QuizScreen> {
         final lines = question.question.split('\n');
         return Column(
           children: [
-            const Text('Complete the conversation',
+            const Text('Complète la conversation',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
             const SizedBox(height: 16),
             // Character + speech bubble
@@ -1611,8 +1612,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: const Color(0xFF58CC02).withValues(alpha: 0.3), width: 1.5),
                       ),
-                      child: const Text('Your turn...',
-                        style: TextStyle(fontSize: 15, color: Color(0xFF58CC02), fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)),
+                      child: const Text('À toi...',
+                        style: TextStyle(fontSize: 16, color: Color(0xFF58CC02), fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -1624,7 +1625,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.listenType:
         return Column(
           children: [
-            const Text('Tap what you hear',
+            const Text('Écris ce que tu entends',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
             const SizedBox(height: 16),
             Row(
@@ -1682,19 +1683,19 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             Text(question.question,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            Text(question.emoji, style: const TextStyle(fontSize: 64)),
+            Text(question.emoji, style: const TextStyle(fontSize: 72)),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ModernButton(text: '🔊 Listen', onPressed: _speakQuestion, backgroundColor: const Color(0xFF2196F3), fontSize: 13, isSmall: true),
+                ModernButton(text: '🔊 Écouter', onPressed: _speakQuestion, backgroundColor: const Color(0xFF2196F3), fontSize: 14, isSmall: true),
                 const SizedBox(width: 8),
-                ModernButton(text: '🐢 Slow', onPressed: () => _audio.speakSlow(_questionQueue[_queueIndex].question), backgroundColor: const Color(0xFF2196F3), fontSize: 13, isSmall: true),
+                ModernButton(text: '🐢 Lent', onPressed: () => _audio.speakSlow(_questionQueue[_queueIndex].question), backgroundColor: const Color(0xFF2196F3), fontSize: 14, isSmall: true),
                 const SizedBox(width: 8),
-                ModernButton(text: '💡 Hint', onPressed: _showHint, backgroundColor: const Color(0xFFFF9800), fontSize: 13, isSmall: true),
+                ModernButton(text: '💡 Indice', onPressed: _showHint, backgroundColor: const Color(0xFFFF9800), fontSize: 14, isSmall: true),
               ],
             ),
           ],
@@ -1717,7 +1718,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 color: Colors.purple.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text('You said: "$_spokenText"',
+              child: Text('Tu as dit : "$_spokenText"',
                 style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Color(0xFF9C27B0))),
             ),
           GestureDetector(
@@ -1741,17 +1742,17 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            _isListening ? 'Listening... tap to stop' : 'Tap the mic and say the word!',
+            _isListening ? 'J\'\u00e9coute... appuie pour arr\u00eater' : 'Appuie sur le micro et dis le mot !',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
           if (!_speechAvailable) ...[
             const SizedBox(height: 12),
-            const Text('🎤 Microphone not available', style: TextStyle(fontSize: 12, color: Colors.red)),
+            const Text('🎤 Micro non disponible', style: TextStyle(fontSize: 12, color: Colors.red)),
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: () => _evaluateSpokenAnswer(question.answer),
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9C27B0), foregroundColor: Colors.white),
-              child: const Text('Skip (I said it) ▶'),
+              child: const Text('Passer (je l\'ai dit) ▶'),
             ),
           ],
         ],
@@ -1874,7 +1875,7 @@ class _QuizScreenState extends State<QuizScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             decoration: InputDecoration(
-              hintText: 'Type your answer...',
+              hintText: 'Écris ta réponse...',
               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 18),
               filled: true, fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF8F00), width: 2)),

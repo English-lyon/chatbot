@@ -142,7 +142,7 @@ class _MascotWidgetState extends State<MascotWidget>
                 child: Text(
                   widget.speechBubble!,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: _bubbleBorder(),
                     height: 1.3,

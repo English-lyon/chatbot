@@ -131,7 +131,7 @@ class _AnswerButtonState extends State<AnswerButton>
 
     Widget button = Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
       decoration: BoxDecoration(
         color: _getBackgroundColor(),
         borderRadius: BorderRadius.circular(16),
@@ -146,7 +146,7 @@ class _AnswerButtonState extends State<AnswerButton>
             child: Text(
               widget.text,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: _getTextColor(),
               ),

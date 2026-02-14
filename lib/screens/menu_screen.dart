@@ -98,7 +98,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi ${profile.name}! 👋',
+                  'Salut ${profile.name} ! 👋',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -106,7 +106,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
                   ),
                 ),
                 const Text(
-                  'Ready to learn English?',
+                  'Prêt à apprendre l\'anglais ?',
                   style: TextStyle(
                     fontSize: 14,
                     color: Color(0xFF7799DD),
@@ -164,7 +164,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
         children: [
           _buildCefrBadge(cefrLevel, cefrColors),
           _buildStatItem('Points', '${appState.progress.totalPoints}', Icons.emoji_events),
-          _buildStatItem('Streak', '${appState.progress.currentStreak} 🔥', Icons.local_fire_department),
+          _buildStatItem('Série', '${appState.progress.currentStreak} 🔥', Icons.local_fire_department),
         ],
       ),
     );
@@ -190,7 +190,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
         ),
         const SizedBox(height: 4),
         const Text(
-          'My Level',
+          'Mon niveau',
           style: TextStyle(
             fontSize: 12,
             color: Colors.white,
@@ -248,8 +248,8 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
           children: [
             Text('🎉', style: TextStyle(fontSize: 60)),
             SizedBox(height: 12),
-            Text('Congratulations!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('You completed all available lessons!', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            Text('Félicitations !', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('Tu as terminé toutes les leçons !', style: TextStyle(fontSize: 14, color: Colors.grey)),
           ],
         ),
       );
@@ -297,7 +297,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('🏆 Chapter Review', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                  child: const Text('🏆 Révision du chapitre', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                 ),
               ),
             const SizedBox(height: 20),
@@ -328,7 +328,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
               },
             ),
             const SizedBox(height: 8),
-            const Text('▶ TAP TO PLAY!', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            const Text('▶ APPUIE POUR JOUER !', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
           ],
         ),
       ),
@@ -356,7 +356,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
           Row(
             children: [
               Text(
-                section != null ? '${section.cefrLevel} — ${section.title}' : 'All done!',
+                section != null ? '${section.cefrLevel} \u2014 ${section.title}' : 'Tout fini !',
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               ),
               const Spacer(),
@@ -378,7 +378,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
           ),
           const SizedBox(height: 4),
           Text(
-            '${appState.completedUnitsCount} / ${appState.totalUnitsCount} units completed',
+            '${appState.completedUnitsCount} / ${appState.totalUnitsCount} leçons terminées',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
           ),
         ],
@@ -393,7 +393,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
           child: ElevatedButton.icon(
             onPressed: () => Navigator.pushNamed(context, '/chat'),
             icon: const Text('🐻', style: TextStyle(fontSize: 18)),
-            label: const Text('Buddy', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text('Copain', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF8F00),
               foregroundColor: Colors.white,
@@ -409,7 +409,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
           child: ElevatedButton.icon(
             onPressed: () => Navigator.pushNamed(context, '/progress'),
             icon: const Icon(Icons.bar_chart_rounded, size: 20),
-            label: const Text('Progress', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text('Progrès', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4CAF50),
               foregroundColor: Colors.white,

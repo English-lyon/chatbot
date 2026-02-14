@@ -12,7 +12,7 @@ class ProgressScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: themeColor.withValues(alpha: 0.04),
       appBar: AppBar(
-        title: const Text('📊 My Progress'),
+        title: const Text('📊 Mes progrès'),
         backgroundColor: themeColor,
         foregroundColor: Colors.white,
       ),
@@ -90,7 +90,7 @@ class ProgressScreen extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            '🏆 My English Level',
+            '🏆 Mon niveau d\'anglais',
             style: TextStyle(
               fontSize: 18,
               color: Colors.white70,
@@ -115,7 +115,7 @@ class ProgressScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '⭐ ${progress.totalPoints} Total Points',
+            '⭐ ${progress.totalPoints} points au total',
             style: const TextStyle(
               fontSize: 16,
               color: Colors.white,
@@ -139,7 +139,7 @@ class ProgressScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Next: ${cefrLabels[currentIdx + 1]}',
+                  'Prochain : ${cefrLabels[currentIdx + 1]}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: Colors.white,
@@ -173,15 +173,15 @@ class ProgressScreen extends StatelessWidget {
         children: [
           _buildStreakItem(
             '🔥',
-            'Current Streak',
-            '${progress.currentStreak} days',
+            'Série actuelle',
+            '${progress.currentStreak} jours',
             Colors.orange,
           ),
           Container(width: 1, height: 50, color: Colors.grey[300]),
           _buildStreakItem(
             '🏅',
-            'Best Streak',
-            '${progress.bestStreak} days',
+            'Meilleure série',
+            '${progress.bestStreak} jours',
             Colors.blue,
           ),
         ],
@@ -232,12 +232,12 @@ class ProgressScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📚 Learning Progress', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Text('📚 Progression', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 16),
           Row(children: [
             const Icon(Icons.check_circle, color: Color(0xFF58CC02), size: 24),
             const SizedBox(width: 12),
-            Text('${appState.completedUnitsCount}/${appState.totalUnitsCount} Units Completed', style: const TextStyle(fontSize: 16, color: Colors.black87)),
+            Text('${appState.completedUnitsCount}/${appState.totalUnitsCount} leçons terminées', style: const TextStyle(fontSize: 16, color: Colors.black87)),
           ]),
           const SizedBox(height: 12),
           ClipRRect(
@@ -272,7 +272,7 @@ class ProgressScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '🏆 Achievements',
+            '🏆 Succès',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -321,9 +321,9 @@ class ProgressScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📖 Current Path', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Text('📖 Parcours actuel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
           const SizedBox(height: 16),
-          Text('Level: ${section.cefrLevel} — ${section.title}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87)),
+          Text('Niveau : ${section.cefrLevel} — ${section.title}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87)),
           if (chapter != null) ...[const SizedBox(height: 4), Text('${chapter.emoji} ${chapter.title}', style: TextStyle(fontSize: 14, color: Colors.grey[600]))],
         ],
       ),

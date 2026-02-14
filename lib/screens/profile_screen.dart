@@ -42,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Scaffold(
           backgroundColor: themeColor.withValues(alpha: 0.06),
           appBar: AppBar(
-            title: const Text('My Profile'),
+            title: const Text('Mon profil'),
             backgroundColor: themeColor,
             foregroundColor: Colors.white,
           ),
@@ -97,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          'Level ${progress.cefrLevel}',
+                          'Niveau ${progress.cefrLevel}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -120,23 +120,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'My Stats',
+                        'Mes stats',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _statRow('⭐', 'Total Points', '${progress.totalPoints}'),
-                      _statRow('🔥', 'Current Streak',
-                          '${progress.currentStreak} days'),
-                      _statRow('🏆', 'Best Streak',
-                          '${progress.bestStreak} days'),
-                      _statRow('✅', 'Units Completed',
+                      _statRow('⭐', 'Points totaux', '${progress.totalPoints}'),
+                      _statRow('🔥', 'Série actuelle',
+                          '${progress.currentStreak} jours'),
+                      _statRow('🏆', 'Meilleure série',
+                          '${progress.bestStreak} jours'),
+                      _statRow('✅', 'Leçons terminées',
                           '${appState.completedUnitsCount}/${appState.totalUnitsCount}'),
                       _statRow(
                         '🎯',
-                        'Recent Accuracy',
+                        'Précision récente',
                         '${(progress.recentAccuracy * 100).round()}%',
                       ),
                     ],
@@ -168,8 +168,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Voice Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('Change voice, speed & pitch', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                              Text('Réglages voix', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('Changer la voix, vitesse et tonalité', style: TextStyle(fontSize: 13, color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -191,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Change Avatar',
+                        'Changer d\'avatar',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -248,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Change Name',
+                        'Changer de nom',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -261,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: TextField(
                               controller: _nameController,
                               decoration: InputDecoration(
-                                hintText: 'Your name',
+                                hintText: 'Ton prénom',
                                 filled: true,
                                 fillColor: Colors.grey.shade100,
                                 border: OutlineInputBorder(
@@ -279,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     name: _nameController.text.trim());
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text('Name updated! ✅')),
+                                      content: Text('Nom mis à jour ! ✅')),
                                 );
                               }
                             },
@@ -290,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text('Save'),
+                            child: const Text('Enregistrer'),
                           ),
                         ],
                       ),
