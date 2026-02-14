@@ -434,7 +434,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                       ]),
                     ),
                     const SizedBox(height: 16),
-                    Expanded(child: Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.center, children: [
+                    Expanded(child: SingleChildScrollView(child: Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.center, children: [
                       for (int i = 0; i < _wordPool.length; i++)
                         GestureDetector(
                           onTap: _answered ? null : () => setState(() => _selectedWords.add(_wordPool.removeAt(i))),
@@ -443,7 +443,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
                               border: Border.all(color: Colors.grey.shade300, width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))]),
                             child: Text(_wordPool[i], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)))),
                         ),
-                    ])),
+                    ]))),
                     if (!_answered) SizedBox(width: double.infinity, child: ElevatedButton(
                       onPressed: _selectedWords.isEmpty ? null : _checkWordOrder,
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF58CC02), foregroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade300, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),

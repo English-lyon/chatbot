@@ -1845,14 +1845,16 @@ class _QuizScreenState extends State<QuizScreen> {
                 });
               },
               builder: (context, candidateData, rejectedData) {
-                return Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    for (int i = 0; i < _wordPool.length; i++)
-                      _buildDraggablePoolWord(i),
-                  ],
+                return SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (int i = 0; i < _wordPool.length; i++)
+                        _buildDraggablePoolWord(i),
+                    ],
+                  ),
                 );
               },
             ),
