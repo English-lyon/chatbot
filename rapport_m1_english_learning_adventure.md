@@ -16,6 +16,14 @@ La problématique qui structure notre travail est la suivante : **comment l'IA g
 
 Notre hypothèse est qu'une IA conversationnelle correctement contrainte par des consignes pédagogiques explicites peut améliorer la qualité de l'expérience d'apprentissage : davantage d'engagement, une meilleure tolérance à l'erreur, et des interactions plus proches d'une pratique réelle de la langue. Nous considérons toutefois les limites : dépendance réseau, variabilité des réponses générées, et nécessité de garde-fous stricts pour un public mineur.
 
+Concrètement, nous avons conçu l'entrée dans l'application comme une phase de sécurisation affective : l'enfant renseigne son prénom, ce qui personnalise immédiatement les messages et réduit la distance avec l'outil. Cette personnalisation initiale favorise l'appropriation de l'environnement d'apprentissage.
+
+![Figure 1 - Écran d'onboarding : saisie du prénom de l'enfant.](images_jeu/figures/fig01.png){ width=68% }
+
+La personnalisation visuelle poursuit le même objectif : en choisissant sa couleur préférée, l'enfant a le sentiment d'agir sur son espace de travail. Ce levier d'autonomie, même simple, améliore l'engagement dans les premières minutes d'usage.
+
+![Figure 2 - Personnalisation de l'interface par sélection de la couleur préférée.](images_jeu/figures/fig02.png){ width=68% }
+
 ## État de l'art
 
 Les agents conversationnels éducatifs ont d'abord été conçus sur des approches à règles. Le cas historique d'**ELIZA** montre bien cette logique : le système reformule des patrons linguistiques sans compréhension du sens. Pour son époque, le résultat est marquant, mais l'illusion conversationnelle s'effondre dès qu'on sort des cas prévus.
@@ -51,6 +59,14 @@ Le parcours d'apprentissage est organisé en **6 modules thématiques** progress
 
 Au-delà du QCM classique, les activités combinent plusieurs formats : compréhension orale, dictée courte, phrase à trous, mini-conversation, ordre des mots, association de paires FR/EN et expression orale guidée. Cette variété limite la monotonie et active des compétences complémentaires (réception, production, mémorisation contextuelle).
 
+L'exercice de remise en ordre des mots illustre cette logique de production guidée : l'enfant ne se contente pas de reconnaître une bonne réponse, il doit reconstruire activement la phrase anglaise. Cette manipulation soutient la compréhension de la syntaxe de base et la mémorisation des structures.
+
+![Figure 3 - Exercice de remise en ordre des mots (production écrite guidée).](images_jeu/figures/fig03.png){ width=70% }
+
+Nous avons également intégré des aides graduées (écoute, mode lent, indice) pour que l'enfant puisse s'auto-réguler avant de valider. Ce mécanisme évite l'échec binaire et installe une progression accompagnée, plus adaptée à l'âge visé.
+
+![Figure 4 - Écran de reprise avec aides graduées (écoute, lent, indice).](images_jeu/figures/fig06.png){ width=70% }
+
 La gamification est structurée autour de mécanismes simples, lisibles par un enfant :
 
 - **Points** (progression immédiate après les réponses),
@@ -64,13 +80,29 @@ D'un point de vue théorique, ces choix s'alignent avec les travaux sur l'engage
 - le **renforcement positif** (récompenses fréquentes et explicites),
 - la logique de **flow** (défi progressif, objectifs courts, retour immédiat).
 
+En cas d'erreur, le feedback n'est pas punitif : l'interface met en évidence la bonne réponse et propose de continuer immédiatement. Cette stratégie protège la confiance de l'enfant et transforme l'erreur en information utile plutôt qu'en sanction.
+
+![Figure 5 - Feedback correctif après erreur : réponse attendue et relance immédiate.](images_jeu/figures/fig05.png){ width=70% }
+
+À l'inverse, une réponse correcte déclenche un feedback positif visible (couleurs, validation, progression de score). Ce renforcement rapide entretient la motivation et soutient la répétition volontaire des exercices.
+
+![Figure 6 - Feedback positif après réussite : validation visuelle et continuité de la tâche.](images_jeu/figures/fig07.png){ width=70% }
+
 Nous avons également intégré un test de positionnement initial, afin d'éviter l'effet démotivant d'un parcours trop facile ou trop difficile. Le placement ajuste le niveau de départ et peut ignorer certaines unités déjà maîtrisées. Cette adaptation initiale améliore la pertinence pédagogique perçue dès les premières sessions.
+
+Le tableau de bord rend la progression immédiatement lisible (niveau CECRL, points, série, avancement des unités). Cette visualisation régulière aide l'enfant à se repérer dans son parcours et à percevoir ses progrès, ce qui est essentiel pour maintenir l'effort dans le temps.
+
+![Figure 7 - Tableau de bord principal : niveau, points, série et progression globale.](images_jeu/figures/fig04.png){ width=70% }
 
 ## Analyse des résultats
 
 Les tests fonctionnels réalisés sur l'application montrent une base technique globalement stable : navigation fluide, chargement rapide de l'interface, sauvegarde persistante, et comportement cohérent des modules. D'après nos validations internes, l'objectif de fluidité visuelle (jusqu'à **60 FPS** sur les écrans principaux) est atteint sur les environnements de test utilisés.
 
 Sur la partie IA, les temps de réponse observés restent compatibles avec un usage enfant (ordre de grandeur inférieur à quelques secondes). Ce point est central : au-delà de 3 à 4 secondes, l'enfant décroche rapidement. Le système conserve donc une interaction suffisamment réactive pour maintenir la dynamique de dialogue.
+
+L'écran de conversation confirme l'apport de l'IA dans la pratique active : l'enfant écrit librement, reçoit une réponse courte, contextualisée et encourageante, puis est relancé par une question simple. Ce format favorise la prise de parole, y compris lorsque l'expression est imparfaite.
+
+![Figure 8 - Module de chat Buddy : interaction guidée et relances conversationnelles.](images_jeu/figures/fig11.png){ width=70% }
 
 Sur le plan pédagogique, les retours qualitatifs sont encourageants : la combinaison « parcours + chat + feedbacks » soutient l'engagement, notamment grâce aux séries et à la visualisation des progrès. Le fait que le chatbot reformule avec un vocabulaire simple réduit la frustration en cas d'erreur.
 
