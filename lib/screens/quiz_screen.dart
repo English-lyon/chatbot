@@ -32,7 +32,6 @@ class _QuizScreenState extends State<QuizScreen> {
   late List<Question> _questionQueue;
   int _queueIndex = 0;
   int? _selectedOptionIndex;
-  int _lives = 5;
   int _score = 0;
   int _totalOriginal = 0;
   int _correctOnFirstTry = 0;
@@ -79,6 +78,9 @@ class _QuizScreenState extends State<QuizScreen> {
   int _highlightStart = -1;
   int _highlightEnd = -1;
   String _listeningTextForHighlight = '';
+
+  // Adaptive difficulty
+  int _consecutiveErrors = 0;
 
   // User profile
   late Color _themeColor;
@@ -755,7 +757,6 @@ class _QuizScreenState extends State<QuizScreen> {
         } else {
           // Wrong match
           _wrongPairItems = {_selectedPairItem!, item};
-          _lives = (_lives - 1).clamp(0, 5);
           _selectedPairItem = null;
           _setMascot(MascotMood.sad, 'Réessaie ! 💪');
           // Clear wrong highlight after a short delay
@@ -767,6 +768,41 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
+  // Varied encouraging messages for wrong answers (kid-friendly)
+  static const _wrongFeedbacks = [
+    'Presque, {name} ! Tu vas y arriver 💪',
+    'Pas grave, {name} ! On apprend en essayant 🌈',
+    'C\'est pas facile, mais tu es courageux {name} ! 💛',
+    'Oups ! Regarde bien la réponse, {name} 👀',
+    'Continue comme ça, {name} ! Tu progresses 🚀',
+  ];
+  static const _wrongExplanations = [
+    '💡 La bonne réponse est "{answer}" {emoji}',
+    '💡 C\'était "{answer}" ! {emoji} Tu t\'en souviendras !',
+    '💡 Regarde : "{answer}" {emoji} — la prochaine fois tu sauras !',
+  ];
+  static const _correctFeedbacks = [
+    '🌟 Super ! Bravo !',
+    '🌟 Trop bien, {name} !',
+    '🌟 Excellent ! Tu es fort(e) !',
+    '🌟 Wahou, c\'est parfait !',
+    '🌟 Génial ! Continue !',
+  ];
+  static const _correctMascots = [
+    'Génial, {name} ! 🎉',
+    'Trop fort, {name} ! ⭐',
+    'Bravo {name} ! 🥳',
+    'Incroyable ! 🎊',
+  ];
+
+  String _randomMsg(List<String> pool, {String? name, String? answer, String? emoji}) {
+    final msg = pool[DateTime.now().microsecond % pool.length];
+    return msg
+        .replaceAll('{name}', name ?? _userName)
+        .replaceAll('{answer}', answer ?? '')
+        .replaceAll('{emoji}', emoji ?? '');
+  }
+
   void _checkAnswer(String selectedAnswer, int index) {
     if (_answered) return;
 
@@ -776,6 +812,7 @@ class _QuizScreenState extends State<QuizScreen> {
       final correctAnswer = question.answer.toLowerCase().trim();
 
       if (selectedAnswer.toLowerCase().trim() == correctAnswer) {
+        _consecutiveErrors = 0;
         if (index >= 0 && index < _answerStates.length) {
           _answerStates[index] = AnswerState.correct;
         }
@@ -784,15 +821,15 @@ class _QuizScreenState extends State<QuizScreen> {
 
         if (!_isRetryQuestion) {
           _correctOnFirstTry++;
-          _feedback = '🌟 Super ! Bravo !';
+          _feedback = _randomMsg(_correctFeedbacks);
         } else {
           _feedback = '🌟 Tu as trouvé cette fois ! Bien joué !';
         }
 
-        _setMascot(MascotMood.happy, 'Génial, $_userName ! 🎉');
+        _setMascot(MascotMood.happy, _randomMsg(_correctMascots));
         _audio.speakCheer();
       } else {
-        _lives = (_lives - 1).clamp(0, 5);
+        _consecutiveErrors++;
         if (index >= 0 && index < _answerStates.length) {
           _answerStates[index] = AnswerState.wrong;
           final correctIndex = _shuffledOptions
@@ -801,8 +838,15 @@ class _QuizScreenState extends State<QuizScreen> {
             _answerStates[correctIndex] = AnswerState.correct;
           }
         }
-        _feedback = '💡 La réponse est "$correctAnswer".\n${_getExplanation(question)}';
-        _setMascot(MascotMood.sad, 'Presque, $_userName ! Réessaie 💪');
+
+        // After 2+ consecutive errors, give a warmer hint
+        if (_consecutiveErrors >= 2) {
+          _feedback = '💡 C\'est "${question.answer}" ${question.emoji}\nPas de souci, on continue ensemble ! 🤗';
+          _setMascot(MascotMood.idle, 'Je suis là pour t\'aider, $_userName ! 🌟');
+        } else {
+          _feedback = _randomMsg(_wrongExplanations, answer: question.answer, emoji: question.emoji);
+          _setMascot(MascotMood.sad, _randomMsg(_wrongFeedbacks));
+        }
 
         if (!_isRetryQuestion) {
           final retry = _createRetryQuestion(question);
@@ -897,16 +941,22 @@ class _QuizScreenState extends State<QuizScreen> {
       _answered = true;
       _isListening = false;
       if (isCorrect) {
+        _consecutiveErrors = 0;
         _score += 25;
         _showCelebration = true;
         if (!_isRetryQuestion) _correctOnFirstTry++;
-        _feedback = '🌟 Super prononciation, $_userName !';
-        _setMascot(MascotMood.happy, 'Parfait, $_userName ! 🎤✨');
+        _feedback = _randomMsg(_correctFeedbacks);
+        _setMascot(MascotMood.happy, _randomMsg(_correctMascots));
         _audio.speakCheer();
       } else {
-        _lives = (_lives - 1).clamp(0, 5);
-        _feedback = '💪 Tu as dit "$spoken" \u2014 le mot est "$expected"';
-        _setMascot(MascotMood.sad, 'Bien essayé ! Réécoute 🔊');
+        _consecutiveErrors++;
+        if (_consecutiveErrors >= 2) {
+          _feedback = '� Le mot est "$expected" 🔊\nPas de souci, on continue ensemble ! 🤗';
+          _setMascot(MascotMood.idle, 'Je suis là pour t\'aider, $_userName ! 🌟');
+        } else {
+          _feedback = '� Tu as dit "$spoken" — le mot est "$expected" 🔊';
+          _setMascot(MascotMood.sad, _randomMsg(_wrongFeedbacks));
+        }
         _audio.speak(expected);
       }
     });
@@ -914,41 +964,36 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Question? _createRetryQuestion(Question original) {
     final a = original.answer;
-    String retryQ;
-    final q = original.question.toLowerCase();
-    if (q.contains('color') || q.contains('colour')) {
-      retryQ = 'Réessaie ! Quelle couleur est "$a" ? ${original.emoji}';
-    } else if (q.contains('animal') || q.contains('says')) {
-      retryQ = 'Encore une fois ! Quel animal est-ce ? ${original.emoji}';
-    } else if (q.contains('how many') || q.contains('number')) {
-      retryQ = 'Encore un essai ! Quel est le nombre ? ${original.emoji}';
-    } else if (q.contains('how do you say')) {
-      retryQ = 'Réessaie ! Comment dit-on en anglais ? ${original.emoji}';
+    // Encouraging retry prompts
+    final retryPrompts = [
+      'On réessaie ! ${original.emoji}',
+      'Encore une fois ! ${original.emoji}',
+      'Tu peux le faire ! ${original.emoji}',
+    ];
+    final retryQ = '${retryPrompts[DateTime.now().microsecond % retryPrompts.length]} $a = ?';
+
+    // ALL retries become multipleChoice (simpler for kids)
+    // After 2+ consecutive errors, reduce to only 2 options (easier)
+    List<String> retryOptions;
+    if (_consecutiveErrors >= 2) {
+      // Only 2 options: the correct answer + 1 wrong one
+      final wrongs = original.options.where((o) => o.toLowerCase() != original.answer.toLowerCase()).toList();
+      wrongs.shuffle();
+      retryOptions = [original.answer, if (wrongs.isNotEmpty) wrongs.first else 'cat'];
+      retryOptions.shuffle();
     } else {
-      retryQ = 'On réessaie ! ${original.question} ${original.emoji}';
+      retryOptions = List<String>.from(original.options)..shuffle();
     }
-    // Retries for writing/wordOrder fall back to multipleChoice
-    final retryType = (original.type == QuestionType.writing || original.type == QuestionType.wordOrder)
-        ? QuestionType.multipleChoice
-        : original.type;
+
     return Question(
       question: retryQ,
       answer: original.answer,
-      options: List<String>.from(original.options)..shuffle(),
+      options: retryOptions,
       emoji: original.emoji,
-      type: retryType,
+      type: QuestionType.multipleChoice,
     );
   }
 
-  String _getExplanation(Question question) {
-    final q = question.question.toLowerCase();
-    final a = question.answer;
-    if (q.contains('color') || q.contains('colour')) return 'La couleur est $a ! ${question.emoji}';
-    if (q.contains('animal') || q.contains('says')) return 'Cet animal est un $a ! ${question.emoji}';
-    if (q.contains('how many') || q.contains('number')) return 'Le nombre est $a ! ${question.emoji}';
-    if (q.contains('how do you say') || q.contains('comment dit-on')) return 'En anglais on dit "$a" ! ${question.emoji}';
-    return 'Le mot correct est "$a" ${question.emoji}';
-  }
 
   void _nextQuestion() {
     setState(() {
@@ -958,9 +1003,9 @@ class _QuizScreenState extends State<QuizScreen> {
         _answered = false;
         _feedback = '';
         _isRetryQuestion = _queueIndex >= _totalOriginal ||
-            _questionQueue[_queueIndex].question.startsWith('Réessaie') ||
-            _questionQueue[_queueIndex].question.startsWith('Encore') ||
-            _questionQueue[_queueIndex].question.startsWith('On réessaie');
+            _questionQueue[_queueIndex].question.startsWith('On réessaie') ||
+            _questionQueue[_queueIndex].question.startsWith('Encore une fois') ||
+            _questionQueue[_queueIndex].question.startsWith('Tu peux le faire');
         _prepareCurrentQuestion();
         _onQuestionReady();
       } else {
@@ -1028,7 +1073,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 _score = 0;
                 _totalOriginal = _questionQueue.length;
                 _correctOnFirstTry = 0;
-                _lives = 5;
                 _isRetryQuestion = false;
                 _answered = false;
                 _feedback = '';
@@ -1162,14 +1206,10 @@ class _QuizScreenState extends State<QuizScreen> {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Text(
-                '${'❤️' * _lives}${'🤍' * (5 - _lives)}',
-                style: const TextStyle(fontSize: 16),
+                '⭐ $_score',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Center(child: Text('⭐ $_score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
           ),
         ],
       ),
