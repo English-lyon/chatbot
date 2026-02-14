@@ -266,14 +266,22 @@ class _QuizScreenState extends State<QuizScreen> {
       } else {
         // Auto-generate a matchPairs from nearby questions
         final pairs = <String, String>{};
+        final usedAnswers = <String>{};
         for (int j = i; j < source.length && pairs.length < 4; j++) {
           final s = source[j];
-          pairs[s.emoji] = s.answer;
+          final answer = s.answer.trim();
+          if (usedAnswers.contains(answer.toLowerCase())) continue;
+          usedAnswers.add(answer.toLowerCase());
+          // Extract French label from question (e.g. "How do you say 'chat'?" → "chat")
+          final match = RegExp(r"['\u2018\u2019\u00AB\u00BB](.+?)['\u2018\u2019\u00AB\u00BB]").firstMatch(s.question);
+          final frLabel = match != null ? '${s.emoji} ${match.group(1)}' : '${s.emoji} ?';
+          pairs[frLabel] = answer;
         }
         // Fill up if not enough
         if (pairs.length < 3) {
-          pairs['🐱'] = 'cat';
-          pairs['🐶'] = 'dog';
+          if (!usedAnswers.contains('cat')) pairs['🐱 chat'] = 'cat';
+          if (!usedAnswers.contains('dog')) pairs['🐶 chien'] = 'dog';
+          if (!usedAnswers.contains('fish')) pairs['🐟 poisson'] = 'fish';
         }
         flow.add(Question(
           question: 'Match the pairs',
@@ -829,12 +837,23 @@ class _QuizScreenState extends State<QuizScreen> {
     });
     await _speech.listen(
       onResult: (result) {
+        if (_answered) return;
         setState(() => _spokenText = result.recognizedWords);
+        // Auto-validate: check partial results against expected word
+        final expected = _questionQueue[_queueIndex].answer.toLowerCase().trim();
+        final said = result.recognizedWords.toLowerCase().trim();
+        final similarity = _letterSimilarity(said, expected);
+        final isMatch = similarity >= 0.6 || said.contains(expected) || expected.contains(said);
+        if (isMatch && said.isNotEmpty) {
+          _speech.stop();
+          _evaluateSpokenAnswer(result.recognizedWords);
+          return;
+        }
         if (result.finalResult) {
           _evaluateSpokenAnswer(result.recognizedWords);
         }
       },
-      listenFor: const Duration(seconds: 5),
+      listenFor: const Duration(seconds: 8),
       localeId: 'en_US',
     );
   }
@@ -1741,25 +1760,23 @@ class _QuizScreenState extends State<QuizScreen> {
 
     // ── Match pairs: two-column layout (FR left, EN right) ──
     if (question.type == QuestionType.matchPairs) {
-      return Expanded(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left column: French words
-            Expanded(child: Column(
-              children: [
-                for (final item in _leftPairItems) _buildPairTile(item),
-              ],
-            )),
-            const SizedBox(width: 10),
-            // Right column: English words
-            Expanded(child: Column(
-              children: [
-                for (final item in _rightPairItems) _buildPairTile(item),
-              ],
-            )),
-          ],
-        ),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left column: French words
+          Expanded(child: Column(
+            children: [
+              for (final item in _leftPairItems) _buildPairTile(item),
+            ],
+          )),
+          const SizedBox(width: 10),
+          // Right column: English words
+          Expanded(child: Column(
+            children: [
+              for (final item in _rightPairItems) _buildPairTile(item),
+            ],
+          )),
+        ],
       );
     }
 
