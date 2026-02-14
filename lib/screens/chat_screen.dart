@@ -44,10 +44,23 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     final appState = Provider.of<AppState>(context, listen: false);
+
+    // Build conversation history for Gemini (last 5 messages only, to limit API cost)
+    final allPrevious = _messages.sublist(0, _messages.length - 1);
+    final recent = allPrevious.length > 5 ? allPrevious.sublist(allPrevious.length - 5) : allPrevious;
+    final history = <Map<String, String>>[];
+    for (final msg in recent) {
+      history.add({
+        'role': msg.isUser ? 'user' : 'model',
+        'text': msg.text,
+      });
+    }
+
     final response = await appState.aiService.chat(
       text,
       cefrLevel: appState.progress.cefrLevel,
       topic: 'general',
+      history: history,
     );
 
     setState(() {

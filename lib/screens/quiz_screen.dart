@@ -82,6 +82,12 @@ class _QuizScreenState extends State<QuizScreen> {
   // Adaptive difficulty
   int _consecutiveErrors = 0;
 
+  // Word order: tap-to-swap index (-1 = none selected)
+  int _swapIndex = -1;
+
+  // Cached references (avoid Provider.of in dispose)
+  late AudioService _audio;
+
   // User profile
   late Color _themeColor;
   late String _userName;
@@ -90,6 +96,7 @@ class _QuizScreenState extends State<QuizScreen> {
   void initState() {
     super.initState();
     final appState = Provider.of<AppState>(context, listen: false);
+    _audio = appState.audioService;
     _themeColor = Color(appState.profile.favoriteColorValue);
     _userName = appState.profile.name;
     _questionQueue = _buildDuolingoExerciseFlow(widget.questions);
@@ -425,8 +432,6 @@ class _QuizScreenState extends State<QuizScreen> {
     super.dispose();
   }
 
-  AudioService get _audio =>
-      Provider.of<AppState>(context, listen: false).audioService;
 
   void _onQuestionReady() {
     final question = _questionQueue[_queueIndex];
@@ -580,96 +585,73 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  // ── Word tiles: draggable builders ──
-  Widget _buildDraggablePoolWord(int index) {
+  // ── Word tiles: tap-based builders (web-friendly, no drag & drop) ──
+  Widget _buildPoolWord(int index) {
     final word = _wordPool[index];
-    return Draggable<String>(
-      data: word,
-      feedback: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1CB0F6).withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF1CB0F6), width: 2),
-          ),
-          child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1CB0F6), decoration: TextDecoration.none)),
+    return GestureDetector(
+      onTap: _answered ? null : () {
+        setState(() {
+          _selectedWords.add(_wordPool.removeAt(index));
+          _swapIndex = -1;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300, width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))],
         ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200, width: 1.5),
-          ),
-          child: Text(word, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
-        ),
-      ),
-      onDragCompleted: () {},
-      child: GestureDetector(
-        onTap: _answered ? null : () {
-          setState(() => _selectedWords.add(_wordPool.removeAt(index)));
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300, width: 1.5),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))],
-          ),
-          child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
-        ),
+        child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
       ),
     );
   }
 
-  Widget _buildDraggableSelectedWord(int index) {
+  Widget _buildSelectedWord(int index) {
     final word = _selectedWords[index];
-    return Draggable<_SentenceWord>(
-      data: _SentenceWord(word, index),
-      feedback: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF4B4B).withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFFF4B4B), width: 2),
+    final isSwapSelected = _swapIndex == index;
+    return GestureDetector(
+      onTap: _answered ? null : () {
+        setState(() {
+          if (_swapIndex == -1) {
+            // First tap: select this word for reordering
+            _swapIndex = index;
+          } else if (_swapIndex == index) {
+            // Tap same word again: send it back to pool
+            _wordPool.add(_selectedWords.removeAt(index));
+            _swapIndex = -1;
+          } else {
+            // Tap a different word: swap positions
+            final temp = _selectedWords[_swapIndex];
+            _selectedWords[_swapIndex] = _selectedWords[index];
+            _selectedWords[index] = temp;
+            _swapIndex = -1;
+          }
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSwapSelected ? const Color(0xFF1CB0F6).withValues(alpha: 0.15) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSwapSelected ? const Color(0xFF1CB0F6) : Colors.grey.shade400,
+            width: isSwapSelected ? 2.5 : 1.5,
           ),
-          child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFFFF4B4B), decoration: TextDecoration.none)),
+          boxShadow: [
+            if (isSwapSelected)
+              BoxShadow(color: const Color(0xFF1CB0F6).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))
+            else
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1)),
+          ],
         ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200, width: 1.5),
-          ),
-          child: Text(word, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.grey.shade300)),
-        ),
-      ),
-      child: GestureDetector(
-        onTap: _answered ? null : () {
-          setState(() => _wordPool.add(_selectedWords.removeAt(index)));
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade400, width: 1.5),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))],
-          ),
-          child: Text(word, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
-        ),
+        child: Text(word, style: TextStyle(
+          fontSize: 20, fontWeight: FontWeight.w700,
+          color: isSwapSelected ? const Color(0xFF1CB0F6) : const Color(0xFF333333),
+        )),
       ),
     );
   }
@@ -1821,83 +1803,55 @@ class _QuizScreenState extends State<QuizScreen> {
       );
     }
 
-    // ── Word tiles: wordOrder & listenType (Duolingo style with drag & drop) ──
+    // ── Word tiles: wordOrder & listenType (tap-based, web-friendly) ──
     if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) {
       final expectedWords = question.answer.split(' ').where((w) => w.trim().isNotEmpty).length;
       return Column(
         children: [
-          // Sentence build area — DragTarget that accepts words from pool
-          DragTarget<String>(
-            onWillAcceptWithDetails: (_) => !_answered,
-            onAcceptWithDetails: (details) {
-              setState(() {
-                final word = details.data;
-                final idx = _wordPool.indexOf(word);
-                if (idx != -1) {
-                  _selectedWords.add(_wordPool.removeAt(idx));
-                }
-              });
-            },
-            builder: (context, candidateData, rejectedData) {
-              final isHovering = candidateData.isNotEmpty;
-              return Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(minHeight: 52),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isHovering ? const Color(0xFF1CB0F6).withValues(alpha: 0.06) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
+          // Sentence build area — tap a word to select/swap/remove
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: _swapIndex >= 0 ? const Color(0xFF1CB0F6).withValues(alpha: 0.04) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (int i = 0; i < _selectedWords.length; i++)
-                          _buildDraggableSelectedWord(i),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      width: double.infinity, height: 2,
-                      color: isHovering ? const Color(0xFF1CB0F6) : (_selectedWords.isEmpty ? Colors.grey.shade300 : Colors.grey.shade200),
-                    ),
-                    if (_selectedWords.length < expectedWords) ...[
-                      const SizedBox(height: 10),
-                      Container(width: double.infinity, height: 2, color: Colors.grey.shade200),
-                    ],
+                    for (int i = 0; i < _selectedWords.length; i++)
+                      _buildSelectedWord(i),
                   ],
                 ),
-              );
-            },
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity, height: 2,
+                  color: _selectedWords.isEmpty ? Colors.grey.shade300 : Colors.grey.shade200,
+                ),
+                if (_selectedWords.length < expectedWords) ...[
+                  const SizedBox(height: 10),
+                  Container(width: double.infinity, height: 2, color: Colors.grey.shade200),
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 20),
-          // Word pool tiles — DragTarget that accepts words back from sentence
+          // Word pool tiles — tap to add to sentence
           Expanded(
-            child: DragTarget<_SentenceWord>(
-              onWillAcceptWithDetails: (_) => !_answered,
-              onAcceptWithDetails: (details) {
-                setState(() {
-                  final idx = details.data.index;
-                  if (idx >= 0 && idx < _selectedWords.length) {
-                    _wordPool.add(_selectedWords.removeAt(idx));
-                  }
-                });
-              },
-              builder: (context, candidateData, rejectedData) {
-                return SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      for (int i = 0; i < _wordPool.length; i++)
-                        _buildDraggablePoolWord(i),
-                    ],
-                  ),
-                );
-              },
+            child: SingleChildScrollView(
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (int i = 0; i < _wordPool.length; i++)
+                    _buildPoolWord(i),
+                ],
+              ),
             ),
           ),
         ],
@@ -1943,9 +1897,3 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 }
 
-/// Data class for dragging a word from the sentence area back to the pool
-class _SentenceWord {
-  final String word;
-  final int index;
-  _SentenceWord(this.word, this.index);
-}

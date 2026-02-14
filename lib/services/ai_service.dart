@@ -14,9 +14,26 @@ class AIService {
     }
   }
 
-  Future<String> _ask(String systemPrompt, String userMessage) async {
+  Future<String> _ask(String systemPrompt, String userMessage, {List<Map<String, String>>? history}) async {
     try {
       const url = '$_baseUrl/$_model:generateContent?key=${AIService.apiKey}';
+
+      // Build multi-turn contents from history if provided
+      final List<Map<String, dynamic>> contents = [];
+      if (history != null) {
+        for (final msg in history) {
+          contents.add({
+            'role': msg['role'] == 'user' ? 'user' : 'model',
+            'parts': [{'text': msg['text'] ?? ''}],
+          });
+        }
+      }
+      // Add the current user message
+      contents.add({
+        'role': 'user',
+        'parts': [{'text': userMessage}],
+      });
+
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -24,11 +41,7 @@ class AIService {
           'system_instruction': {
             'parts': [{'text': systemPrompt}]
           },
-          'contents': [
-            {
-              'parts': [{'text': userMessage}]
-            }
-          ],
+          'contents': contents,
           'generationConfig': {
             'maxOutputTokens': 200,
             'temperature': 0.8,
@@ -50,13 +63,14 @@ class AIService {
     }
   }
 
-  Future<String> chat(String userMessage, {String? cefrLevel, String? topic}) async {
+  Future<String> chat(String userMessage, {String? cefrLevel, String? topic, List<Map<String, String>>? history}) async {
     final level = cefrLevel ?? 'A1';
     final levelGuidance = _getLevelGuidance(level);
     final systemPrompt = '''You are Buddy, a fun and enthusiastic kid (about 8 years old) who LOVES English and talks to another child.
 You are NOT a teacher. You are a friend who happens to know English well.
 
 IMPORTANT: Your friend's English level is $level. You MUST adapt your language to this level.
+IMPORTANT: You remember everything said in this conversation. Stay consistent with what you and your friend already discussed. Never contradict yourself.
 
 How you talk:
 - You talk like a real child: excited, playful, sometimes silly
@@ -74,7 +88,7 @@ $levelGuidance
 Keep responses short (2-3 sentences max), fun, and natural like a kid chatting.
 ${topic != null ? 'You\'re talking about: $topic\n' : ''}''';
 
-    return _ask(systemPrompt, userMessage);
+    return _ask(systemPrompt, userMessage, history: history);
   }
 
   Future<String> getHint(String question, String correctAnswer) async {

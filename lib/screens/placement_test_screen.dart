@@ -171,36 +171,54 @@ class _PlacementTestScreenState extends State<PlacementTestScreen> {
 
   void _finishTest() {
     final appState = Provider.of<AppState>(context, listen: false);
-    String placedLevel;
     Set<String> unitsToSkip = {};
 
     final a1Correct = _countCorrectForLevel('A1');
     final a2Correct = _countCorrectForLevel('A2');
+    final totalCorrect = a1Correct + a2Correct;
 
-    if (a1Correct >= 3 && a2Correct >= 3) {
+    // Proportional placement across all available levels
+    // Levels ordered: A1-, A1, A1+, A2-, A2, A2+
+    final allLevels = LearningPath.getSections().map((s) => s.cefrLevel).toList();
+    String placedLevel;
+    List<String> levelsToSkip = [];
+
+    if (totalCorrect <= 2) {
+      // Very low score → absolute beginner
+      placedLevel = allLevels.isNotEmpty ? allLevels.first : 'A1-';
+    } else if (a1Correct >= 3 && a2Correct < 2) {
+      // A1 mastered, A2 weak → place at A1+ (skip A1- and A1)
+      placedLevel = 'A1+';
+      levelsToSkip = ['A1-', 'A1'];
+    } else if (a1Correct >= 3 && a2Correct >= 2 && a2Correct < 4) {
+      // A1 mastered, A2 partial → place at A2- (skip A1-, A1, A1+)
+      placedLevel = 'A2-';
+      levelsToSkip = ['A1-', 'A1', 'A1+'];
+    } else if (a1Correct >= 3 && a2Correct >= 4 && a2Correct < 6) {
+      // A1 mastered, A2 mostly correct → place at A2 (skip through A2-)
       placedLevel = 'A2';
-      for (final section in LearningPath.getSections()) {
-        if (section.cefrLevel.startsWith('A1')) {
-          for (final chapter in section.chapters) {
-            for (final unit in chapter.units) {
-              unitsToSkip.add(unit.id);
-            }
-          }
-        }
-      }
-    } else if (a1Correct >= 3) {
+      levelsToSkip = ['A1-', 'A1', 'A1+', 'A2-'];
+    } else if (a1Correct >= 3 && a2Correct >= 6) {
+      // Perfect or near-perfect → place at A2+ (skip through A2)
+      placedLevel = 'A2+';
+      levelsToSkip = ['A1-', 'A1', 'A1+', 'A2-', 'A2'];
+    } else if (a1Correct >= 1) {
+      // Some A1 correct → place at A1 (skip A1-)
       placedLevel = 'A1';
-      for (final section in LearningPath.getSections()) {
-        if (section.cefrLevel == 'A1-') {
-          for (final chapter in section.chapters) {
-            for (final unit in chapter.units) {
-              unitsToSkip.add(unit.id);
-            }
-          }
-        }
-      }
+      levelsToSkip = ['A1-'];
     } else {
-      placedLevel = 'A1';
+      placedLevel = 'A1-';
+    }
+
+    // Skip all units in the levels below the placed level
+    for (final section in LearningPath.getSections()) {
+      if (levelsToSkip.contains(section.cefrLevel)) {
+        for (final chapter in section.chapters) {
+          for (final unit in chapter.units) {
+            unitsToSkip.add(unit.id);
+          }
+        }
+      }
     }
 
     appState.completePlacement(placedLevel, unitsToSkip);
