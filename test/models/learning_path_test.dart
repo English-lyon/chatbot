@@ -188,6 +188,35 @@ void main() {
       expect(chapter, isNotNull);
       expect(chapter!.id, LearningPath.getSections().first.chapters.first.id);
     });
+
+    test('getUnitsBelowLevel(A2) skips A1 and keeps A2', () {
+      final belowA2 = LearningPath.getUnitsBelowLevel('A2');
+      expect(belowA2.isNotEmpty, true);
+
+      final a1Section =
+          LearningPath.getSections().firstWhere((s) => s.cefrLevel == 'A1');
+      for (final chapter in a1Section.chapters) {
+        for (final unit in chapter.units) {
+          expect(
+            belowA2.contains(unit.id),
+            true,
+            reason: 'A1 unit ${unit.id} should be skipped for A2 placement',
+          );
+        }
+      }
+
+      final a2Section =
+          LearningPath.getSections().firstWhere((s) => s.cefrLevel == 'A2');
+      for (final chapter in a2Section.chapters) {
+        for (final unit in chapter.units) {
+          expect(
+            belowA2.contains(unit.id),
+            false,
+            reason: 'A2 unit ${unit.id} should stay available for A2 placement',
+          );
+        }
+      }
+    });
   });
 
   group('LearningPath Progress', () {

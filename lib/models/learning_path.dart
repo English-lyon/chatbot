@@ -53,6 +53,42 @@ class Section {
 }
 
 class LearningPath {
+  static const List<String> _cefrOrder = [
+    'A1-',
+    'A1',
+    'A1+',
+    'A2-',
+    'A2',
+    'A2+',
+    'B1',
+    'B2',
+    'C1',
+    'C2',
+  ];
+
+  static int? _cefrIndex(String cefrLevel) {
+    final idx = _cefrOrder.indexOf(cefrLevel);
+    return idx == -1 ? null : idx;
+  }
+
+  /// Returns all unit IDs strictly below the given CEFR level.
+  static Set<String> getUnitsBelowLevel(String cefrLevel) {
+    final targetIndex = _cefrIndex(cefrLevel);
+    if (targetIndex == null) return {};
+
+    final unitIds = <String>{};
+    for (final section in getSections()) {
+      final sectionIndex = _cefrIndex(section.cefrLevel);
+      if (sectionIndex == null || sectionIndex >= targetIndex) continue;
+      for (final chapter in section.chapters) {
+        for (final unit in chapter.units) {
+          unitIds.add(unit.id);
+        }
+      }
+    }
+    return unitIds;
+  }
+
   static List<Section> getSections() {
     return [
       // ============================================================

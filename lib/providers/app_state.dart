@@ -33,9 +33,57 @@ class AppState extends ChangeNotifier {
 
     _progress = await _storageService.loadProgress();
     _profile = await _storageService.loadProfile();
-    
+    await _applyPlacementFloorIfNeeded();
+
     _isLoading = false;
     notifyListeners();
+  }
+
+  String _normalizeCefrBucket(String cefrLevel) {
+    if (cefrLevel.startsWith('A1')) return 'A1';
+    if (cefrLevel.startsWith('A2')) return 'A2';
+    if (cefrLevel.startsWith('B1')) return 'B1';
+    if (cefrLevel.startsWith('B2')) return 'B2';
+    if (cefrLevel.startsWith('C1')) return 'C1';
+    if (cefrLevel.startsWith('C2')) return 'C2';
+    return cefrLevel;
+  }
+
+  int _targetPointsForPlacedLevel(String cefrLevel) {
+    const levelPoints = {
+      'A1': 0,
+      'A2': 200,
+      'B1': 500,
+      'B2': 1000,
+      'C1': 2000,
+      'C2': 3500,
+    };
+    return levelPoints[_normalizeCefrBucket(cefrLevel)] ?? 0;
+  }
+
+  Future<void> _applyPlacementFloorIfNeeded() async {
+    final placedLevel = _profile.placedLevel;
+    if (!_profile.hasCompletedPlacement ||
+        placedLevel == null ||
+        placedLevel.isEmpty) {
+      return;
+    }
+
+    final skipUnitIds = LearningPath.getUnitsBelowLevel(placedLevel);
+    final beforeCount = _progress.completedUnitIds.length;
+    final beforePoints = _progress.totalPoints;
+
+    _progress.completedUnitIds.addAll(skipUnitIds);
+    final targetPoints = _targetPointsForPlacedLevel(placedLevel);
+    if (_progress.totalPoints < targetPoints) {
+      _progress.totalPoints = targetPoints;
+    }
+
+    final changed = _progress.completedUnitIds.length != beforeCount ||
+        _progress.totalPoints != beforePoints;
+    if (changed) {
+      await _storageService.saveProgress(_progress);
+    }
   }
 
   Future<void> saveProgress() async {
@@ -48,10 +96,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile({String? name, String? avatarEmoji, int? favoriteColorValue}) {
+  void updateProfile(
+      {String? name, String? avatarEmoji, int? favoriteColorValue}) {
     if (name != null) _profile.name = name;
     if (avatarEmoji != null) _profile.avatarEmoji = avatarEmoji;
-    if (favoriteColorValue != null) _profile.favoriteColorValue = favoriteColorValue;
+    if (favoriteColorValue != null) {
+      _profile.favoriteColorValue = favoriteColorValue;
+    }
     saveProfile();
   }
 
@@ -63,15 +114,13 @@ class AppState extends ChangeNotifier {
   void completePlacement(String cefrLevel, Set<String> unitsToSkip) {
     _profile.hasCompletedPlacement = true;
     _profile.placedLevel = cefrLevel;
-    // Mark lower-level units as completed so child starts at right level
-    for (final unitId in unitsToSkip) {
-      _progress.completedUnitIds.add(unitId);
-    }
-    // Give initial points so cefrLevel getter matches the placed level
-    final levelPoints = {
-      'A1': 0, 'A2': 200, 'B1': 500, 'B2': 1000, 'C1': 2000, 'C2': 3500,
-    };
-    final targetPoints = levelPoints[cefrLevel] ?? 0;
+    // Mark lower-level units as completed so child starts at the correct level.
+    _progress.completedUnitIds
+        .addAll(LearningPath.getUnitsBelowLevel(cefrLevel));
+    _progress.completedUnitIds.addAll(unitsToSkip);
+
+    // Keep displayed CEFR badge aligned with placement.
+    final targetPoints = _targetPointsForPlacedLevel(cefrLevel);
     if (_progress.totalPoints < targetPoints) {
       _progress.totalPoints = targetPoints;
     }
