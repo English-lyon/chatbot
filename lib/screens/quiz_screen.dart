@@ -18,11 +18,9 @@ class QuizScreen extends StatefulWidget {
     this.unit,
   });
 
-  List<Question> get questions =>
-      unit?.questions ?? [];
+  List<Question> get questions => unit?.questions ?? [];
 
-  String get title =>
-      unit?.title ?? 'Quiz';
+  String get title => unit?.title ?? 'Quiz';
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -56,23 +54,30 @@ class _QuizScreenState extends State<QuizScreen> {
   final TextEditingController _writingController = TextEditingController();
 
   // Word-order: chip builder
-  List<String> _wordPool = [];       // available chips
-  List<String> _selectedWords = [];  // chips the child tapped (sentence being built)
+  List<String> _wordPool = []; // available chips
+  List<String> _selectedWords =
+      []; // chips the child tapped (sentence being built)
 
   // Match pairs state
-  List<String> _pairItems = [];           // all items (FR + EN) for length check
-  List<String> _leftPairItems = [];       // FR words (shuffled independently)
-  List<String> _rightPairItems = [];      // EN words (shuffled independently)
-  Map<String, String> _pairMap = {};      // correct mapping {item: partner}
-  String? _selectedPairItem;              // currently tapped item
-  Set<String> _matchedPairs = {};         // successfully matched items
-  Set<String> _wrongPairItems = {};       // items that just got wrong (flash red)
+  List<String> _pairItems = []; // all items (FR + EN) for length check
+  List<String> _leftPairItems = []; // FR words (shuffled independently)
+  List<String> _rightPairItems = []; // EN words (shuffled independently)
+  Map<String, String> _pairMap = {}; // correct mapping {item: partner}
+  Map<String, String> _pairLabels =
+      {}; // display label by internal pair item id
+  String? _selectedPairItem; // currently tapped item
+  Set<String> _matchedPairs = {}; // successfully matched items
+  Set<String> _wrongPairItems = {}; // items that just got wrong (flash red)
 
   // Skip cooldown (5 min) — static so it persists across quiz screens
   static DateTime? _speakingSkipUntil;
   static DateTime? _listeningSkipUntil;
-  bool get _speakingCooldown => _speakingSkipUntil != null && DateTime.now().isBefore(_speakingSkipUntil!);
-  bool get _listeningCooldown => _listeningSkipUntil != null && DateTime.now().isBefore(_listeningSkipUntil!);
+  bool get _speakingCooldown =>
+      _speakingSkipUntil != null &&
+      DateTime.now().isBefore(_speakingSkipUntil!);
+  bool get _listeningCooldown =>
+      _listeningSkipUntil != null &&
+      DateTime.now().isBefore(_listeningSkipUntil!);
 
   // Word-by-word highlight for listening
   int _highlightStart = -1;
@@ -111,8 +116,10 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildCorrectionPanel() {
     final isCorrect = _feedback.startsWith('🌟');
     final bg = isCorrect ? const Color(0xFFD7FFB8) : const Color(0xFFFFDFE0);
-    final border = isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
-    final textColor = isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
+    final border =
+        isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
+    final textColor =
+        isCorrect ? const Color(0xFF58CC02) : const Color(0xFFFF4B4B);
     final icon = isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded;
 
     return Positioned(
@@ -135,7 +142,8 @@ class _QuizScreenState extends State<QuizScreen> {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
               boxShadow: [
                 BoxShadow(
                   color: border.withValues(alpha: 0.3),
@@ -264,7 +272,8 @@ class _QuizScreenState extends State<QuizScreen> {
             ? q.answer
             : 'I like ${q.answer.toLowerCase()}';
         // Use the original question as a French-style prompt for translation
-        final frenchPrompt = q.question.replaceAll(RegExp(r"How do you say '(.+)'.*"), r'$1')
+        final frenchPrompt = q.question
+            .replaceAll(RegExp(r"How do you say '(.+)'.*"), r'$1')
             .replaceAll(RegExp(r"What is .+\?"), q.answer);
         flow.add(Question(
           question: frenchPrompt,
@@ -283,8 +292,11 @@ class _QuizScreenState extends State<QuizScreen> {
           if (usedAnswers.contains(answer.toLowerCase())) continue;
           usedAnswers.add(answer.toLowerCase());
           // Extract French label from question (e.g. "How do you say 'chat'?" → "chat")
-          final match = RegExp(r"['\u2018\u2019\u00AB\u00BB](.+?)['\u2018\u2019\u00AB\u00BB]").firstMatch(s.question);
-          final frLabel = match != null ? '${s.emoji} ${match.group(1)}' : '${s.emoji} ?';
+          final match = RegExp(
+                  r"['\u2018\u2019\u00AB\u00BB](.+?)['\u2018\u2019\u00AB\u00BB]")
+              .firstMatch(s.question);
+          final frLabel =
+              match != null ? '${s.emoji} ${match.group(1)}' : '${s.emoji} ?';
           pairs[frLabel] = answer;
         }
         // Fill up if not enough
@@ -339,7 +351,8 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _selectedOptionIndex = index;
       for (int i = 0; i < _answerStates.length; i++) {
-        _answerStates[i] = i == index ? AnswerState.selected : AnswerState.normal;
+        _answerStates[i] =
+            i == index ? AnswerState.selected : AnswerState.normal;
       }
     });
   }
@@ -358,8 +371,11 @@ class _QuizScreenState extends State<QuizScreen> {
     if (question.type == QuestionType.speaking) return true;
     if (question.type == QuestionType.matchPairs) return true;
     if (_isOptionExercise(question.type)) return _selectedOptionIndex != null;
-    if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) return _selectedWords.isNotEmpty;
-    if (question.type == QuestionType.writing) return _writingController.text.trim().isNotEmpty;
+    if (question.type == QuestionType.wordOrder ||
+        question.type == QuestionType.listenType)
+      return _selectedWords.isNotEmpty;
+    if (question.type == QuestionType.writing)
+      return _writingController.text.trim().isNotEmpty;
     return false;
   }
 
@@ -394,7 +410,8 @@ class _QuizScreenState extends State<QuizScreen> {
       _checkAnswer(_shuffledOptions[idx], idx);
       return;
     }
-    if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) {
+    if (question.type == QuestionType.wordOrder ||
+        question.type == QuestionType.listenType) {
       _checkWordOrder();
       return;
     }
@@ -416,10 +433,18 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _setupAudioCallbacks() {
     _audio.onWordSpoken = (start, end) {
-      if (mounted) setState(() { _highlightStart = start; _highlightEnd = end; });
+      if (mounted)
+        setState(() {
+          _highlightStart = start;
+          _highlightEnd = end;
+        });
     };
     _audio.onSpeakComplete = () {
-      if (mounted) setState(() { _highlightStart = -1; _highlightEnd = -1; });
+      if (mounted)
+        setState(() {
+          _highlightStart = -1;
+          _highlightEnd = -1;
+        });
     };
   }
 
@@ -432,7 +457,6 @@ class _QuizScreenState extends State<QuizScreen> {
     super.dispose();
   }
 
-
   void _onQuestionReady() {
     final question = _questionQueue[_queueIndex];
     if (question.type == QuestionType.listening) {
@@ -441,7 +465,8 @@ class _QuizScreenState extends State<QuizScreen> {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.speaking) {
-      _setMascot(MascotMood.speaking, 'Répète après moi, $_userName ! \u{1F5E3}\u{FE0F}');
+      _setMascot(MascotMood.speaking,
+          'Répète après moi, $_userName ! \u{1F5E3}\u{FE0F}');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
@@ -453,7 +478,8 @@ class _QuizScreenState extends State<QuizScreen> {
         if (mounted) _audio.speak(question.answer);
       });
     } else if (question.type == QuestionType.wordOrder) {
-      _setMascot(MascotMood.thinking, 'Traduis, $_userName ! \u{1F1EB}\u{1F1F7}\u{27A1}\u{FE0F}\u{1F1EC}\u{1F1E7}');
+      _setMascot(MascotMood.thinking,
+          'Traduis, $_userName ! \u{1F1EB}\u{1F1F7}\u{27A1}\u{FE0F}\u{1F1EC}\u{1F1E7}');
     } else if (question.type == QuestionType.matchPairs) {
       _setMascot(MascotMood.idle, 'Trouve les paires, $_userName ! \u{1F517}');
     } else if (question.type == QuestionType.fillBlank) {
@@ -461,7 +487,8 @@ class _QuizScreenState extends State<QuizScreen> {
     } else if (question.type == QuestionType.conversation) {
       _setMascot(MascotMood.speaking, 'À toi, $_userName ! \u{1F4AC}');
     } else if (question.type == QuestionType.listenType) {
-      _setMascot(MascotMood.listening, 'Écoute et écris ! \u{1F3A7}\u{270D}\u{FE0F}');
+      _setMascot(
+          MascotMood.listening, 'Écoute et écris ! \u{1F3A7}\u{270D}\u{FE0F}');
       Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) _audio.speak(question.answer);
       });
@@ -504,30 +531,55 @@ class _QuizScreenState extends State<QuizScreen> {
     _leftPairItems = [];
     _rightPairItems = [];
     _pairMap = {};
+    _pairLabels = {};
     _selectedPairItem = null;
     _matchedPairs = {};
     _wrongPairItems = {};
 
     if (question.type == QuestionType.matchPairs && question.pairs != null) {
-      // Build two independently shuffled columns (FR left, EN right)
-      _leftPairItems = question.pairs!.keys.toList()..shuffle();
-      _rightPairItems = question.pairs!.values.toList()..shuffle();
+      // Build stable unique ids to avoid collisions on identical labels
+      // (e.g. "orange" <-> "orange").
+      final entries = question.pairs!.entries.toList();
+      _leftPairItems = [];
+      _rightPairItems = [];
       _pairMap = {};
-      for (final entry in question.pairs!.entries) {
-        _pairMap[entry.key] = entry.value;
-        _pairMap[entry.value] = entry.key;
+      _pairLabels = {};
+      for (int i = 0; i < entries.length; i++) {
+        final leftId = 'L_$i';
+        final rightId = 'R_$i';
+        _leftPairItems.add(leftId);
+        _rightPairItems.add(rightId);
+        _pairLabels[leftId] = entries[i].key;
+        _pairLabels[rightId] = entries[i].value;
+        _pairMap[leftId] = rightId;
+        _pairMap[rightId] = leftId;
       }
+      _leftPairItems.shuffle();
+      _rightPairItems.shuffle();
       _pairItems = [..._leftPairItems, ..._rightPairItems];
       _shuffledOptions = [];
       _answerStates = [];
-    } else if (question.type == QuestionType.speaking || question.type == QuestionType.writing) {
+    } else if (question.type == QuestionType.speaking ||
+        question.type == QuestionType.writing) {
       _shuffledOptions = [];
       _answerStates = [];
     } else if (question.type == QuestionType.listenType) {
       _listeningTextForHighlight = question.answer;
       // Generate word tiles from answer + distractors (Duolingo style)
-      final answerWords = question.answer.split(' ').where((w) => w.trim().isNotEmpty).toList();
-      const distractorPool = ['the', 'a', 'is', 'and', 'my', 'it', 'has', 'not', 'can', 'big'];
+      final answerWords =
+          question.answer.split(' ').where((w) => w.trim().isNotEmpty).toList();
+      const distractorPool = [
+        'the',
+        'a',
+        'is',
+        'and',
+        'my',
+        'it',
+        'has',
+        'not',
+        'can',
+        'big'
+      ];
       final tiles = <String>[...answerWords];
       for (final d in distractorPool) {
         if (tiles.length >= answerWords.length + 3) break;
@@ -554,11 +606,13 @@ class _QuizScreenState extends State<QuizScreen> {
 
   /// Convert a speaking/listening question to multipleChoice (for cooldown)
   Question _convertToMultipleChoice(Question q) {
-    final mcOptions = q.options.length >= 3
-        ? q.options
-        : [q.answer, 'cat', 'dog', 'hello'];
+    final mcOptions =
+        q.options.length >= 3 ? q.options : [q.answer, 'cat', 'dog', 'hello'];
     return Question(
-      question: q.question.replaceFirst('Say this', 'What is this').replaceFirst('out loud:', '?').replaceFirst('Dis ce mot en anglais', 'Quel est ce mot'),
+      question: q.question
+          .replaceFirst('Say this', 'What is this')
+          .replaceFirst('out loud:', '?')
+          .replaceFirst('Dis ce mot en anglais', 'Quel est ce mot'),
       answer: q.answer,
       options: mcOptions,
       emoji: q.emoji,
@@ -589,12 +643,14 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildPoolWord(int index) {
     final word = _wordPool[index];
     return GestureDetector(
-      onTap: _answered ? null : () {
-        setState(() {
-          _selectedWords.add(_wordPool.removeAt(index));
-          _swapIndex = -1;
-        });
-      },
+      onTap: _answered
+          ? null
+          : () {
+              setState(() {
+                _selectedWords.add(_wordPool.removeAt(index));
+                _swapIndex = -1;
+              });
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -602,9 +658,18 @@ class _QuizScreenState extends State<QuizScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300, width: 1.5),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 4,
+                offset: const Offset(0, 2))
+          ],
         ),
-        child: Text(word, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
+        child: Text(word,
+            style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF333333))),
       ),
     );
   }
@@ -613,54 +678,70 @@ class _QuizScreenState extends State<QuizScreen> {
     final word = _selectedWords[index];
     final isSwapSelected = _swapIndex == index;
     return GestureDetector(
-      onTap: _answered ? null : () {
-        setState(() {
-          if (_swapIndex == -1) {
-            // First tap: select this word for reordering
-            _swapIndex = index;
-          } else if (_swapIndex == index) {
-            // Tap same word again: send it back to pool
-            _wordPool.add(_selectedWords.removeAt(index));
-            _swapIndex = -1;
-          } else {
-            // Tap a different word: swap positions
-            final temp = _selectedWords[_swapIndex];
-            _selectedWords[_swapIndex] = _selectedWords[index];
-            _selectedWords[index] = temp;
-            _swapIndex = -1;
-          }
-        });
-      },
+      onTap: _answered
+          ? null
+          : () {
+              setState(() {
+                if (_swapIndex == -1) {
+                  // First tap: select this word for reordering
+                  _swapIndex = index;
+                } else if (_swapIndex == index) {
+                  // Tap same word again: send it back to pool
+                  _wordPool.add(_selectedWords.removeAt(index));
+                  _swapIndex = -1;
+                } else {
+                  // Tap a different word: swap positions
+                  final temp = _selectedWords[_swapIndex];
+                  _selectedWords[_swapIndex] = _selectedWords[index];
+                  _selectedWords[index] = temp;
+                  _swapIndex = -1;
+                }
+              });
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSwapSelected ? const Color(0xFF1CB0F6).withValues(alpha: 0.15) : Colors.white,
+          color: isSwapSelected
+              ? const Color(0xFF1CB0F6).withValues(alpha: 0.15)
+              : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSwapSelected ? const Color(0xFF1CB0F6) : Colors.grey.shade400,
+            color:
+                isSwapSelected ? const Color(0xFF1CB0F6) : Colors.grey.shade400,
             width: isSwapSelected ? 2.5 : 1.5,
           ),
           boxShadow: [
             if (isSwapSelected)
-              BoxShadow(color: const Color(0xFF1CB0F6).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))
+              BoxShadow(
+                  color: const Color(0xFF1CB0F6).withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
             else
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1)),
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1)),
           ],
         ),
-        child: Text(word, style: TextStyle(
-          fontSize: 20, fontWeight: FontWeight.w700,
-          color: isSwapSelected ? const Color(0xFF1CB0F6) : const Color(0xFF333333),
-        )),
+        child: Text(word,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: isSwapSelected
+                  ? const Color(0xFF1CB0F6)
+                  : const Color(0xFF333333),
+            )),
       ),
     );
   }
 
   // ── Match pairs: build a compact tile ──
-  Widget _buildPairTile(String item) {
-    final isMatched = _matchedPairs.contains(item);
-    final isSelected = _selectedPairItem == item;
-    final isWrong = _wrongPairItems.contains(item);
+  Widget _buildPairTile(String itemId) {
+    final isMatched = _matchedPairs.contains(itemId);
+    final isSelected = _selectedPairItem == itemId;
+    final isWrong = _wrongPairItems.contains(itemId);
+    final label = _pairLabels[itemId] ?? itemId;
 
     Color bg = Colors.white;
     Color border = Colors.grey.shade300;
@@ -683,7 +764,7 @@ class _QuizScreenState extends State<QuizScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: isMatched ? null : () => _onPairItemTap(item),
+        onTap: isMatched ? null : () => _onPairItemTap(itemId),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: double.infinity,
@@ -692,11 +773,17 @@ class _QuizScreenState extends State<QuizScreen> {
             color: bg,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: border, width: 2),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 3, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 3,
+                  offset: const Offset(0, 2))
+            ],
           ),
           child: Text(
-            item,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
+            label,
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
             textAlign: TextAlign.center,
           ),
         ),
@@ -777,7 +864,8 @@ class _QuizScreenState extends State<QuizScreen> {
     'Incroyable ! 🎊',
   ];
 
-  String _randomMsg(List<String> pool, {String? name, String? answer, String? emoji}) {
+  String _randomMsg(List<String> pool,
+      {String? name, String? answer, String? emoji}) {
     final msg = pool[DateTime.now().microsecond % pool.length];
     return msg
         .replaceAll('{name}', name ?? _userName)
@@ -823,10 +911,13 @@ class _QuizScreenState extends State<QuizScreen> {
 
         // After 2+ consecutive errors, give a warmer hint
         if (_consecutiveErrors >= 2) {
-          _feedback = '💡 C\'est "${question.answer}" ${question.emoji}\nPas de souci, on continue ensemble ! 🤗';
-          _setMascot(MascotMood.idle, 'Je suis là pour t\'aider, $_userName ! 🌟');
+          _feedback =
+              '💡 C\'est "${question.answer}" ${question.emoji}\nPas de souci, on continue ensemble ! 🤗';
+          _setMascot(
+              MascotMood.idle, 'Je suis là pour t\'aider, $_userName ! 🌟');
         } else {
-          _feedback = _randomMsg(_wrongExplanations, answer: question.answer, emoji: question.emoji);
+          _feedback = _randomMsg(_wrongExplanations,
+              answer: question.answer, emoji: question.emoji);
           _setMascot(MascotMood.sad, _randomMsg(_wrongFeedbacks));
         }
 
@@ -867,10 +958,13 @@ class _QuizScreenState extends State<QuizScreen> {
         if (_answered) return;
         setState(() => _spokenText = result.recognizedWords);
         // Auto-validate: check partial results against expected word
-        final expected = _questionQueue[_queueIndex].answer.toLowerCase().trim();
+        final expected =
+            _questionQueue[_queueIndex].answer.toLowerCase().trim();
         final said = result.recognizedWords.toLowerCase().trim();
         final similarity = _letterSimilarity(said, expected);
-        final isMatch = similarity >= 0.6 || said.contains(expected) || expected.contains(said);
+        final isMatch = similarity >= 0.6 ||
+            said.contains(expected) ||
+            expected.contains(said);
         if (isMatch && said.isNotEmpty) {
           _speech.stop();
           _evaluateSpokenAnswer(result.recognizedWords);
@@ -917,7 +1011,8 @@ class _QuizScreenState extends State<QuizScreen> {
     final said = spoken.toLowerCase().trim();
     // Accept if 60% of letters match (kids won't pronounce perfectly)
     final similarity = _letterSimilarity(said, expected);
-    final isCorrect = similarity >= 0.6 || said.contains(expected) || expected.contains(said);
+    final isCorrect =
+        similarity >= 0.6 || said.contains(expected) || expected.contains(said);
 
     setState(() {
       _answered = true;
@@ -933,10 +1028,12 @@ class _QuizScreenState extends State<QuizScreen> {
       } else {
         _consecutiveErrors++;
         if (_consecutiveErrors >= 2) {
-          _feedback = '� Le mot est "$expected" 🔊\nPas de souci, on continue ensemble ! 🤗';
-          _setMascot(MascotMood.idle, 'Je suis là pour t\'aider, $_userName ! 🌟');
+          _feedback =
+              '💡 Le mot est "$expected" 🔊\nPas de souci, on continue ensemble ! 🤗';
+          _setMascot(
+              MascotMood.idle, 'Je suis là pour t\'aider, $_userName ! 🌟');
         } else {
-          _feedback = '� Tu as dit "$spoken" — le mot est "$expected" 🔊';
+          _feedback = '💡 Tu as dit "$spoken" — le mot est "$expected" 🔊';
           _setMascot(MascotMood.sad, _randomMsg(_wrongFeedbacks));
         }
         _audio.speak(expected);
@@ -952,16 +1049,22 @@ class _QuizScreenState extends State<QuizScreen> {
       'Encore une fois ! ${original.emoji}',
       'Tu peux le faire ! ${original.emoji}',
     ];
-    final retryQ = '${retryPrompts[DateTime.now().microsecond % retryPrompts.length]} $a = ?';
+    final retryQ =
+        '${retryPrompts[DateTime.now().microsecond % retryPrompts.length]} $a = ?';
 
     // ALL retries become multipleChoice (simpler for kids)
     // After 2+ consecutive errors, reduce to only 2 options (easier)
     List<String> retryOptions;
     if (_consecutiveErrors >= 2) {
       // Only 2 options: the correct answer + 1 wrong one
-      final wrongs = original.options.where((o) => o.toLowerCase() != original.answer.toLowerCase()).toList();
+      final wrongs = original.options
+          .where((o) => o.toLowerCase() != original.answer.toLowerCase())
+          .toList();
       wrongs.shuffle();
-      retryOptions = [original.answer, if (wrongs.isNotEmpty) wrongs.first else 'cat'];
+      retryOptions = [
+        original.answer,
+        if (wrongs.isNotEmpty) wrongs.first else 'cat'
+      ];
       retryOptions.shuffle();
     } else {
       retryOptions = List<String>.from(original.options)..shuffle();
@@ -976,7 +1079,6 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-
   void _nextQuestion() {
     setState(() {
       _showCelebration = false;
@@ -986,7 +1088,9 @@ class _QuizScreenState extends State<QuizScreen> {
         _feedback = '';
         _isRetryQuestion = _queueIndex >= _totalOriginal ||
             _questionQueue[_queueIndex].question.startsWith('On réessaie') ||
-            _questionQueue[_queueIndex].question.startsWith('Encore une fois') ||
+            _questionQueue[_queueIndex]
+                .question
+                .startsWith('Encore une fois') ||
             _questionQueue[_queueIndex].question.startsWith('Tu peux le faire');
         _prepareCurrentQuestion();
         _onQuestionReady();
@@ -998,11 +1102,13 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _showResults() async {
     final appState = Provider.of<AppState>(context, listen: false);
-    final accuracy = _totalOriginal > 0 ? _correctOnFirstTry / _totalOriginal : 1.0;
+    final accuracy =
+        _totalOriginal > 0 ? _correctOnFirstTry / _totalOriginal : 1.0;
     final percentage = (accuracy * 100).round();
     final totalPoints = _totalOriginal * 25;
 
-    String encouragement = await appState.aiService.getEncouragement(_score, totalPoints);
+    String encouragement =
+        await appState.aiService.getEncouragement(_score, totalPoints);
 
     if (widget.unit != null) {
       appState.completeUnit(widget.unit!.id, _score, accuracy: accuracy);
@@ -1010,7 +1116,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (!mounted) return;
 
-    final mascotEmoji = percentage >= 80 ? '🥳' : (percentage >= 50 ? '🐻' : '💪');
+    final mascotEmoji =
+        percentage >= 80 ? '🥳' : (percentage >= 50 ? '🐻' : '💪');
     final mascotText = percentage >= 80
         ? 'Leçon parfaite !'
         : (percentage >= 50 ? 'Bien joué !' : 'Continue comme ça !');
@@ -1024,24 +1131,34 @@ class _QuizScreenState extends State<QuizScreen> {
           children: [
             Text(mascotEmoji, style: const TextStyle(fontSize: 64)),
             const SizedBox(height: 8),
-            Text(mascotText, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4CAF50))),
+            Text(mascotText,
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4CAF50))),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$percentage% de bonnes réponses', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            Text('$_correctOnFirstTry / $_totalOriginal du premier coup', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+            Text('$percentage% de bonnes réponses',
+                style:
+                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            Text('$_correctOnFirstTry / $_totalOriginal du premier coup',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildResultBadge('⚡ XP', '$_score', const Color(0xFF9C27B0)),
-                _buildResultBadge('🎯', '$percentage%', const Color(0xFF4CAF50)),
+                _buildResultBadge(
+                    '🎯', '$percentage%', const Color(0xFF4CAF50)),
               ],
             ),
             const SizedBox(height: 16),
-            Text(encouragement, style: const TextStyle(fontSize: 15), textAlign: TextAlign.center),
+            Text(encouragement,
+                style: const TextStyle(fontSize: 15),
+                textAlign: TextAlign.center),
           ],
         ),
         actions: [
@@ -1065,10 +1182,15 @@ class _QuizScreenState extends State<QuizScreen> {
             child: const Text('🔄 Rejouer'),
           ),
           ElevatedButton(
-            onPressed: () { Navigator.pop(context); Navigator.pop(context); },
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50), foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              backgroundColor: const Color(0xFF4CAF50),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
             ),
             child: Text(widget.unit != null ? 'Continuer ▶' : '🏠 Menu'),
           ),
@@ -1086,8 +1208,12 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
@@ -1101,23 +1227,34 @@ class _QuizScreenState extends State<QuizScreen> {
     _setMascot(MascotMood.thinking, 'Hmm laisse-moi réfléchir... 🤔');
     final appState = Provider.of<AppState>(context, listen: false);
     final question = _questionQueue[_queueIndex];
-    final hint = await appState.aiService.getHint(question.question, question.answer);
+    final hint =
+        await appState.aiService.getHint(question.question, question.answer);
     if (!mounted) return;
     _setMascot(MascotMood.thinking, hint);
   }
 
   String _typeBadge(QuestionType t) {
     switch (t) {
-      case QuestionType.listening: return '🎧';
-      case QuestionType.speaking: return '🗣️';
-      case QuestionType.reading: return '📖';
-      case QuestionType.writing: return '✏️';
-      case QuestionType.wordOrder: return '🧩';
-      case QuestionType.matchPairs: return '🔗';
-      case QuestionType.fillBlank: return '📝';
-      case QuestionType.conversation: return '💬';
-      case QuestionType.listenType: return '🎧';
-      case QuestionType.multipleChoice: return '';
+      case QuestionType.listening:
+        return '🎧';
+      case QuestionType.speaking:
+        return '🗣️';
+      case QuestionType.reading:
+        return '📖';
+      case QuestionType.writing:
+        return '✏️';
+      case QuestionType.wordOrder:
+        return '🧩';
+      case QuestionType.matchPairs:
+        return '🔗';
+      case QuestionType.fillBlank:
+        return '📝';
+      case QuestionType.conversation:
+        return '💬';
+      case QuestionType.listenType:
+        return '🎧';
+      case QuestionType.multipleChoice:
+        return '';
     }
   }
 
@@ -1174,13 +1311,16 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       backgroundColor: _themeColor.withValues(alpha: 0.04),
       appBar: AppBar(
-        title: Text('${_queueIndex + 1}/${_questionQueue.length}${badge.isNotEmpty ? " $badge" : ""}${_isRetryQuestion ? " 🔁" : ""}'),
+        title: Text(
+            '${_queueIndex + 1}/${_questionQueue.length}${badge.isNotEmpty ? " $badge" : ""}${_isRetryQuestion ? " 🔁" : ""}'),
         backgroundColor: _themeColor,
         foregroundColor: Colors.white,
         actions: [
           // 🐢 slow button
           IconButton(
-            icon: Icon(_audio.isSlow ? Icons.speed : Icons.slow_motion_video_rounded, size: 22),
+            icon: Icon(
+                _audio.isSlow ? Icons.speed : Icons.slow_motion_video_rounded,
+                size: 22),
             tooltip: _audio.isSlow ? 'Normal speed' : 'Slow speed 🐢',
             onPressed: () => setState(() => _audio.toggleSlow()),
           ),
@@ -1189,7 +1329,8 @@ class _QuizScreenState extends State<QuizScreen> {
             child: Center(
               child: Text(
                 '⭐ $_score',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -1209,12 +1350,14 @@ class _QuizScreenState extends State<QuizScreen> {
                       value: (_queueIndex + 1) / _questionQueue.length,
                       minHeight: 6,
                       backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF4CAF50)),
                     ),
                   ),
                   const SizedBox(height: 8),
                   // ── Mascot + speech bubble ──
-                  MascotWidget(mood: _mascotMood, size: 50, speechBubble: _mascotSpeech),
+                  MascotWidget(
+                      mood: _mascotMood, size: 50, speechBubble: _mascotSpeech),
                   const SizedBox(height: 8),
                   // ── Question area ──
                   AnimatedSwitcher(
@@ -1230,7 +1373,8 @@ class _QuizScreenState extends State<QuizScreen> {
                       );
                     },
                     child: KeyedSubtree(
-                      key: ValueKey('question_${_queueIndex}_${question.type.name}'),
+                      key: ValueKey(
+                          'question_${_queueIndex}_${question.type.name}'),
                       child: _buildQuestionArea(question),
                     ),
                   ),
@@ -1243,7 +1387,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         return FadeTransition(opacity: animation, child: child);
                       },
                       child: KeyedSubtree(
-                        key: ValueKey('answer_${_queueIndex}_${question.type.name}'),
+                        key: ValueKey(
+                            'answer_${_queueIndex}_${question.type.name}'),
                         child: _buildAnswerArea(question),
                       ),
                     ),
@@ -1266,7 +1411,10 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                         child: Text(
-                          (question.type == QuestionType.speaking || question.type == QuestionType.matchPairs) ? 'PASSER' : 'VÉRIFIER',
+                          (question.type == QuestionType.speaking ||
+                                  question.type == QuestionType.matchPairs)
+                              ? 'PASSER'
+                              : 'VÉRIFIER',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -1293,8 +1441,11 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('🎧 Écoute et choisis la bonne réponse',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+                textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1302,34 +1453,45 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Normal speed
                 GestureDetector(
                   onTap: () {
-                    setState(() { _listeningTextForHighlight = question.answer; });
+                    setState(() {
+                      _listeningTextForHighlight = question.answer;
+                    });
                     _audio.speak(question.answer);
                   },
                   child: Container(
-                    width: 90, height: 90,
+                    width: 90,
+                    height: 90,
                     decoration: BoxDecoration(
                       color: const Color(0xFF2196F3).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF2196F3), width: 3),
+                      border:
+                          Border.all(color: const Color(0xFF2196F3), width: 3),
                     ),
-                    child: const Icon(Icons.volume_up_rounded, size: 48, color: Color(0xFF2196F3)),
+                    child: const Icon(Icons.volume_up_rounded,
+                        size: 48, color: Color(0xFF2196F3)),
                   ),
                 ),
                 const SizedBox(width: 16),
                 // Slow speed 🐢
                 GestureDetector(
                   onTap: () {
-                    setState(() { _listeningTextForHighlight = question.answer; });
+                    setState(() {
+                      _listeningTextForHighlight = question.answer;
+                    });
                     _audio.speakSlow(question.answer);
                   },
                   child: Container(
-                    width: 60, height: 60,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
                       color: const Color(0xFF2196F3).withValues(alpha: 0.06),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF2196F3).withValues(alpha: 0.5), width: 2),
+                      border: Border.all(
+                          color: const Color(0xFF2196F3).withValues(alpha: 0.5),
+                          width: 2),
                     ),
-                    child: const Center(child: Text('🐢', style: TextStyle(fontSize: 28))),
+                    child: const Center(
+                        child: Text('🐢', style: TextStyle(fontSize: 28))),
                   ),
                 ),
               ],
@@ -1345,7 +1507,9 @@ class _QuizScreenState extends State<QuizScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: TextButton(
                   onPressed: () => _skipExercise(QuestionType.listening),
-                  child: Text('Passer l\'\u00e9coute (5 min)', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  child: Text('Passer l\'\u00e9coute (5 min)',
+                      style:
+                          TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                 ),
               ),
           ],
@@ -1355,8 +1519,11 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('🗣️ Dis ce mot en anglais',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+                textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(question.emoji, style: const TextStyle(fontSize: 48)),
             const SizedBox(height: 6),
@@ -1368,7 +1535,11 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
               child: Text(
                 question.answer.toUpperCase(),
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF9C27B0), letterSpacing: 2),
+                style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF9C27B0),
+                    letterSpacing: 2),
               ),
             ),
             const SizedBox(height: 6),
@@ -1380,9 +1551,12 @@ class _QuizScreenState extends State<QuizScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.volume_up_rounded, size: 18, color: Color(0xFF2196F3)),
+                      Icon(Icons.volume_up_rounded,
+                          size: 18, color: Color(0xFF2196F3)),
                       SizedBox(width: 4),
-                      Text('Écouter', style: TextStyle(fontSize: 14, color: Color(0xFF2196F3))),
+                      Text('Écouter',
+                          style: TextStyle(
+                              fontSize: 14, color: Color(0xFF2196F3))),
                     ],
                   ),
                 ),
@@ -1394,7 +1568,9 @@ class _QuizScreenState extends State<QuizScreen> {
                     children: [
                       Text('🐢', style: TextStyle(fontSize: 16)),
                       SizedBox(width: 4),
-                      Text('Lent', style: TextStyle(fontSize: 14, color: Color(0xFF2196F3))),
+                      Text('Lent',
+                          style: TextStyle(
+                              fontSize: 14, color: Color(0xFF2196F3))),
                     ],
                   ),
                 ),
@@ -1406,7 +1582,9 @@ class _QuizScreenState extends State<QuizScreen> {
                 padding: const EdgeInsets.only(top: 6),
                 child: TextButton(
                   onPressed: () => _skipExercise(QuestionType.speaking),
-                  child: Text('Passer la parole (5 min)', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  child: Text('Passer la parole (5 min)',
+                      style:
+                          TextStyle(fontSize: 13, color: Colors.grey.shade500)),
                 ),
               ),
           ],
@@ -1414,12 +1592,17 @@ class _QuizScreenState extends State<QuizScreen> {
 
       case QuestionType.reading:
         final parts = question.question.split(' — ');
-        final sentence = parts.length > 1 ? parts[0].replaceFirst('Read: ', '') : question.question;
+        final sentence = parts.length > 1
+            ? parts[0].replaceFirst('Read: ', '')
+            : question.question;
         final comprehensionQ = parts.length > 1 ? parts[1] : '';
         return Column(
           children: [
             const Text('📖 Lis et réponds',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4CAF50))),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4CAF50))),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -1427,22 +1610,37 @@ class _QuizScreenState extends State<QuizScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF4CAF50).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.2)),
+                border: Border.all(
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.2)),
               ),
               child: Text(sentence,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF333333), height: 1.4),
-                textAlign: TextAlign.center),
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                      height: 1.4),
+                  textAlign: TextAlign.center),
             ),
             if (comprehensionQ.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(comprehensionQ, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87), textAlign: TextAlign.center),
+                child: Text(comprehensionQ,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87),
+                    textAlign: TextAlign.center),
               ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(icon: const Icon(Icons.volume_up_rounded, color: Color(0xFF2196F3), size: 20), onPressed: () => _audio.speak(sentence)),
-                IconButton(icon: const Text('🐢', style: TextStyle(fontSize: 18)), onPressed: () => _audio.speakSlow(sentence)),
+                IconButton(
+                    icon: const Icon(Icons.volume_up_rounded,
+                        color: Color(0xFF2196F3), size: 20),
+                    onPressed: () => _audio.speak(sentence)),
+                IconButton(
+                    icon: const Text('🐢', style: TextStyle(fontSize: 18)),
+                    onPressed: () => _audio.speakSlow(sentence)),
               ],
             ),
           ],
@@ -1452,19 +1650,26 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('✍️ Écris ta réponse en anglais',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F00))),
             const SizedBox(height: 8),
             Text(question.emoji, style: const TextStyle(fontSize: 40)),
             const SizedBox(height: 4),
             Text(question.question,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+                textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.volume_up_rounded, color: Color(0xFF2196F3), size: 20),
+                  icon: const Icon(Icons.volume_up_rounded,
+                      color: Color(0xFF2196F3), size: 20),
                   onPressed: () => _audio.speak(question.answer),
                 ),
                 IconButton(
@@ -1480,36 +1685,53 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('Traduis en anglais',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF333333))),
             const SizedBox(height: 14),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 48, height: 48,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: const Color(0xFF1CB0F6).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Center(child: Text('👩‍🏫', style: TextStyle(fontSize: 28))),
+                  child: const Center(
+                      child: Text('👩‍🏫', style: TextStyle(fontSize: 28))),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: GestureDetector(
                     onTap: () => _audio.speak(question.question),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                        border: Border.all(
+                            color: const Color(0xFFE0E0E0), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2))
+                        ],
                       ),
                       child: Row(children: [
-                        const Icon(Icons.volume_up_rounded, color: Color(0xFF1CB0F6), size: 20),
+                        const Icon(Icons.volume_up_rounded,
+                            color: Color(0xFF1CB0F6), size: 20),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(question.question,
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF333333)))),
+                        Expanded(
+                            child: Text(question.question,
+                                style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF333333)))),
                       ]),
                     ),
                   ),
@@ -1523,12 +1745,15 @@ class _QuizScreenState extends State<QuizScreen> {
         return const Column(
           children: [
             Text('🔗 Trouve les paires',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+                textAlign: TextAlign.center),
             SizedBox(height: 4),
             Text('Appuie sur un mot, puis sur son équivalent',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
-              textAlign: TextAlign.center),
+                style: TextStyle(fontSize: 15, color: Colors.black54),
+                textAlign: TextAlign.center),
           ],
         );
 
@@ -1536,7 +1761,10 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('📝 Complète la phrase',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFF8F00))),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F00))),
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
@@ -1544,18 +1772,25 @@ class _QuizScreenState extends State<QuizScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFF8F00).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFF8F00).withValues(alpha: 0.2)),
+                border: Border.all(
+                    color: const Color(0xFFFF8F00).withValues(alpha: 0.2)),
               ),
               child: Text(question.question,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF333333), height: 1.5),
-                textAlign: TextAlign.center),
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF333333),
+                      height: 1.5),
+                  textAlign: TextAlign.center),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.volume_up_rounded, color: Color(0xFF2196F3), size: 20),
-                  onPressed: () => _audio.speak(question.question.replaceAll('___', question.answer)),
+                  icon: const Icon(Icons.volume_up_rounded,
+                      color: Color(0xFF2196F3), size: 20),
+                  onPressed: () => _audio.speak(
+                      question.question.replaceAll('___', question.answer)),
                 ),
               ],
             ),
@@ -1567,7 +1802,10 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('Complète la conversation',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF333333))),
             const SizedBox(height: 16),
             // Character + speech bubble
             for (final line in lines)
@@ -1577,34 +1815,51 @@ class _QuizScreenState extends State<QuizScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: const Color(0xFF7C4DFF).withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Center(child: Text('👩‍🏫', style: TextStyle(fontSize: 22))),
+                      child: const Center(
+                          child: Text('👩‍🏫', style: TextStyle(fontSize: 22))),
                     ),
                     const SizedBox(width: 10),
                     Flexible(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(4), topRight: Radius.circular(16),
-                            bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16),
+                            topLeft: Radius.circular(4),
+                            topRight: Radius.circular(16),
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
                           ),
-                          border: Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                          border: Border.all(
+                              color: const Color(0xFFE0E0E0), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2))
+                          ],
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           GestureDetector(
-                            onTap: () => _audio.speak(line.replaceAll(RegExp(r'[🧑🤖]\s*'), '')),
-                            child: const Icon(Icons.volume_up_rounded, color: Color(0xFF1CB0F6), size: 18),
+                            onTap: () => _audio.speak(
+                                line.replaceAll(RegExp(r'[🧑🤖]\s*'), '')),
+                            child: const Icon(Icons.volume_up_rounded,
+                                color: Color(0xFF1CB0F6), size: 18),
                           ),
                           const SizedBox(width: 8),
-                          Flexible(child: Text(line,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333)))),
+                          Flexible(
+                              child: Text(line,
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF333333)))),
                         ]),
                       ),
                     ),
@@ -1618,24 +1873,34 @@ class _QuizScreenState extends State<QuizScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 40, height: 40,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: const Color(0xFF58CC02).withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Center(child: Text('🧒', style: TextStyle(fontSize: 22))),
+                    child: const Center(
+                        child: Text('🧒', style: TextStyle(fontSize: 22))),
                   ),
                   const SizedBox(width: 10),
                   Flexible(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: const Color(0xFF58CC02).withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF58CC02).withValues(alpha: 0.3), width: 1.5),
+                        border: Border.all(
+                            color:
+                                const Color(0xFF58CC02).withValues(alpha: 0.3),
+                            width: 1.5),
                       ),
                       child: const Text('À toi...',
-                        style: TextStyle(fontSize: 16, color: Color(0xFF58CC02), fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)),
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF58CC02),
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -1648,50 +1913,67 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             const Text('Écris ce que tu entends',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF333333))),
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF333333))),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 48, height: 48,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: const Color(0xFF1CB0F6).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Center(child: Text('👩‍🏫', style: TextStyle(fontSize: 28))),
+                  child: const Center(
+                      child: Text('👩‍🏫', style: TextStyle(fontSize: 28))),
                 ),
                 const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                    border:
+                        Border.all(color: const Color(0xFFE0E0E0), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2))
+                    ],
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     GestureDetector(
                       onTap: () => _audio.speak(question.answer),
                       child: Container(
-                        width: 44, height: 44,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           color: const Color(0xFF1CB0F6),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.volume_up_rounded, size: 26, color: Colors.white),
+                        child: const Icon(Icons.volume_up_rounded,
+                            size: 26, color: Colors.white),
                       ),
                     ),
                     const SizedBox(width: 10),
                     GestureDetector(
                       onTap: () => _audio.speakSlow(question.answer),
                       child: Container(
-                        width: 44, height: 44,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1CB0F6).withValues(alpha: 0.12),
+                          color:
+                              const Color(0xFF1CB0F6).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.slow_motion_video_rounded, size: 26, color: Color(0xFF1CB0F6)),
+                        child: const Icon(Icons.slow_motion_video_rounded,
+                            size: 26, color: Color(0xFF1CB0F6)),
                       ),
                     ),
                   ]),
@@ -1705,19 +1987,38 @@ class _QuizScreenState extends State<QuizScreen> {
         return Column(
           children: [
             Text(question.question,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center),
+                style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+                textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(question.emoji, style: const TextStyle(fontSize: 72)),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ModernButton(text: '🔊 Écouter', onPressed: _speakQuestion, backgroundColor: const Color(0xFF2196F3), fontSize: 14, isSmall: true),
+                ModernButton(
+                    text: '🔊 Écouter',
+                    onPressed: _speakQuestion,
+                    backgroundColor: const Color(0xFF2196F3),
+                    fontSize: 14,
+                    isSmall: true),
                 const SizedBox(width: 8),
-                ModernButton(text: '🐢 Lent', onPressed: () => _audio.speakSlow(_questionQueue[_queueIndex].question), backgroundColor: const Color(0xFF2196F3), fontSize: 14, isSmall: true),
+                ModernButton(
+                    text: '🐢 Lent',
+                    onPressed: () =>
+                        _audio.speakSlow(_questionQueue[_queueIndex].question),
+                    backgroundColor: const Color(0xFF2196F3),
+                    fontSize: 14,
+                    isSmall: true),
                 const SizedBox(width: 8),
-                ModernButton(text: '💡 Indice', onPressed: _showHint, backgroundColor: const Color(0xFFFF9800), fontSize: 14, isSmall: true),
+                ModernButton(
+                    text: '💡 Indice',
+                    onPressed: _showHint,
+                    backgroundColor: const Color(0xFFFF9800),
+                    fontSize: 14,
+                    isSmall: true),
               ],
             ),
           ],
@@ -1741,7 +2042,10 @@ class _QuizScreenState extends State<QuizScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text('Tu as dit : "$_spokenText"',
-                style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Color(0xFF9C27B0))),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Color(0xFF9C27B0))),
             ),
           GestureDetector(
             onTap: _isListening ? _stopListening : _startListening,
@@ -1750,30 +2054,49 @@ class _QuizScreenState extends State<QuizScreen> {
               width: _isListening ? 100 : 80,
               height: _isListening ? 100 : 80,
               decoration: BoxDecoration(
-                color: _isListening ? const Color(0xFFE91E63) : const Color(0xFF9C27B0),
+                color: _isListening
+                    ? const Color(0xFFE91E63)
+                    : const Color(0xFF9C27B0),
                 shape: BoxShape.circle,
                 boxShadow: _isListening
-                    ? [BoxShadow(color: const Color(0xFFE91E63).withValues(alpha: 0.4), blurRadius: 20, spreadRadius: 4)]
-                    : [BoxShadow(color: const Color(0xFF9C27B0).withValues(alpha: 0.3), blurRadius: 10)],
+                    ? [
+                        BoxShadow(
+                            color:
+                                const Color(0xFFE91E63).withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            spreadRadius: 4)
+                      ]
+                    : [
+                        BoxShadow(
+                            color:
+                                const Color(0xFF9C27B0).withValues(alpha: 0.3),
+                            blurRadius: 10)
+                      ],
               ),
               child: Icon(
                 _isListening ? Icons.stop_rounded : Icons.mic_rounded,
-                size: 44, color: Colors.white,
+                size: 44,
+                color: Colors.white,
               ),
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            _isListening ? 'J\'\u00e9coute... appuie pour arr\u00eater' : 'Appuie sur le micro et dis le mot !',
+            _isListening
+                ? 'J\'\u00e9coute... appuie pour arr\u00eater'
+                : 'Appuie sur le micro et dis le mot !',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
           if (!_speechAvailable) ...[
             const SizedBox(height: 12),
-            const Text('🎤 Micro non disponible', style: TextStyle(fontSize: 12, color: Colors.red)),
+            const Text('🎤 Micro non disponible',
+                style: TextStyle(fontSize: 12, color: Colors.red)),
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: () => _evaluateSpokenAnswer(question.answer),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9C27B0), foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF9C27B0),
+                  foregroundColor: Colors.white),
               child: const Text('Passer (je l\'ai dit) ▶'),
             ),
           ],
@@ -1787,14 +2110,16 @@ class _QuizScreenState extends State<QuizScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left column: French words
-          Expanded(child: Column(
+          Expanded(
+              child: Column(
             children: [
               for (final item in _leftPairItems) _buildPairTile(item),
             ],
           )),
           const SizedBox(width: 10),
           // Right column: English words
-          Expanded(child: Column(
+          Expanded(
+              child: Column(
             children: [
               for (final item in _rightPairItems) _buildPairTile(item),
             ],
@@ -1804,8 +2129,10 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     // ── Word tiles: wordOrder & listenType (tap-based, web-friendly) ──
-    if (question.type == QuestionType.wordOrder || question.type == QuestionType.listenType) {
-      final expectedWords = question.answer.split(' ').where((w) => w.trim().isNotEmpty).length;
+    if (question.type == QuestionType.wordOrder ||
+        question.type == QuestionType.listenType) {
+      final expectedWords =
+          question.answer.split(' ').where((w) => w.trim().isNotEmpty).length;
       return Column(
         children: [
           // Sentence build area — tap a word to select/swap/remove
@@ -1814,7 +2141,9 @@ class _QuizScreenState extends State<QuizScreen> {
             constraints: const BoxConstraints(minHeight: 52),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              color: _swapIndex >= 0 ? const Color(0xFF1CB0F6).withValues(alpha: 0.04) : Colors.transparent,
+              color: _swapIndex >= 0
+                  ? const Color(0xFF1CB0F6).withValues(alpha: 0.04)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -1829,12 +2158,18 @@ class _QuizScreenState extends State<QuizScreen> {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  width: double.infinity, height: 2,
-                  color: _selectedWords.isEmpty ? Colors.grey.shade300 : Colors.grey.shade200,
+                  width: double.infinity,
+                  height: 2,
+                  color: _selectedWords.isEmpty
+                      ? Colors.grey.shade300
+                      : Colors.grey.shade200,
                 ),
                 if (_selectedWords.length < expectedWords) ...[
                   const SizedBox(height: 10),
-                  Container(width: double.infinity, height: 2, color: Colors.grey.shade200),
+                  Container(
+                      width: double.infinity,
+                      height: 2,
+                      color: Colors.grey.shade200),
                 ],
               ],
             ),
@@ -1848,8 +2183,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 runSpacing: 10,
                 alignment: WrapAlignment.center,
                 children: [
-                  for (int i = 0; i < _wordPool.length; i++)
-                    _buildPoolWord(i),
+                  for (int i = 0; i < _wordPool.length; i++) _buildPoolWord(i),
                 ],
               ),
             ),
@@ -1871,10 +2205,20 @@ class _QuizScreenState extends State<QuizScreen> {
             decoration: InputDecoration(
               hintText: 'Écris ta réponse...',
               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 18),
-              filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF8F00), width: 2)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300, width: 2)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFFF8F00), width: 2)),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFFF8F00), width: 2)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide:
+                      BorderSide(color: Colors.grey.shade300, width: 2)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFFF8F00), width: 2)),
             ),
             onSubmitted: (_) => _submitCurrentExercise(question),
           ),
@@ -1896,4 +2240,3 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 }
-
