@@ -10,7 +10,18 @@ void main() {
     });
 
     test('sections have valid CEFR levels', () {
-      final validLevels = ['A1-', 'A1', 'A1+', 'A2-', 'A2', 'A2+', 'B1', 'B2', 'C1', 'C2'];
+      final validLevels = [
+        'A1-',
+        'A1',
+        'A1+',
+        'A2-',
+        'A2',
+        'A2+',
+        'B1',
+        'B2',
+        'C1',
+        'C2'
+      ];
       for (final section in LearningPath.getSections()) {
         expect(validLevels.contains(section.cefrLevel), true,
             reason: '${section.cefrLevel} is not a valid CEFR level');
@@ -47,15 +58,41 @@ void main() {
     });
 
     test('all questions have answer in options', () {
+      const optionBasedTypes = <QuestionType>{
+        QuestionType.multipleChoice,
+        QuestionType.listening,
+        QuestionType.reading,
+        QuestionType.fillBlank,
+        QuestionType.conversation,
+      };
       for (final unit in LearningPath.getAllUnitsFlat()) {
         for (final q in unit.questions) {
-          // wordOrder: answer is a sentence, options are word chips
-          if (q.type == QuestionType.wordOrder) continue;
+          if (!optionBasedTypes.contains(q.type)) continue;
           expect(
-            q.options.map((o) => o.toLowerCase()).contains(q.answer.toLowerCase()),
+            q.options
+                .map((o) => o.toLowerCase())
+                .contains(q.answer.toLowerCase()),
             true,
             reason:
                 'Answer "${q.answer}" not in options for "${q.question}" in unit ${unit.id}',
+          );
+        }
+      }
+    });
+
+    test('no known ambiguous color prompts', () {
+      const bannedPrompts = <String>{
+        'the apple is ___.',
+        'what color is an orange?',
+        'what color is your bag?',
+      };
+      for (final unit in LearningPath.getAllUnitsFlat()) {
+        for (final q in unit.questions) {
+          final normalized = q.question.trim().toLowerCase();
+          expect(
+            bannedPrompts.contains(normalized),
+            false,
+            reason: 'Ambiguous prompt "${q.question}" found in unit ${unit.id}',
           );
         }
       }
@@ -75,7 +112,8 @@ void main() {
       for (final unit in LearningPath.getAllUnitsFlat()) {
         if (unit.type == UnitType.review) {
           expect(unit.pointsReward, greaterThan(25),
-              reason: 'Review unit ${unit.id} should reward more than 25 points');
+              reason:
+                  'Review unit ${unit.id} should reward more than 25 points');
         }
       }
     });
@@ -176,7 +214,8 @@ void main() {
       }
 
       final halfCompleted = units.sublist(0, units.length ~/ 2).toSet();
-      final progress = LearningPath.getSectionProgress(firstSection.id, halfCompleted);
+      final progress =
+          LearningPath.getSectionProgress(firstSection.id, halfCompleted);
       expect(progress, greaterThan(0.0));
       expect(progress, lessThan(1.0));
     });
@@ -193,7 +232,8 @@ void main() {
     });
 
     test('getTotalUnits matches getAllUnitsFlat length', () {
-      expect(LearningPath.getTotalUnits(), LearningPath.getAllUnitsFlat().length);
+      expect(
+          LearningPath.getTotalUnits(), LearningPath.getAllUnitsFlat().length);
     });
   });
 }
