@@ -18,11 +18,11 @@ Notre hypothèse est qu'une IA conversationnelle correctement contrainte par des
 
 Concrètement, nous avons conçu l'entrée dans l'application comme une phase de sécurisation affective : l'enfant renseigne son prénom, ce qui personnalise immédiatement les messages et réduit la distance avec l'outil. Cette personnalisation initiale favorise l'appropriation de l'environnement d'apprentissage.
 
-![Figure 1 - Écran d'onboarding : saisie du prénom de l'enfant.](images_jeu/figures/fig01.png){ width=68% }
+![Écran d'onboarding : saisie du prénom de l'enfant.](images_jeu/figures/fig01.png){ width=68% }
 
 La personnalisation visuelle poursuit le même objectif : en choisissant sa couleur préférée, l'enfant a le sentiment d'agir sur son espace de travail. Ce levier d'autonomie, même simple, améliore l'engagement dans les premières minutes d'usage.
 
-![Figure 2 - Personnalisation de l'interface par sélection de la couleur préférée.](images_jeu/figures/fig02.png){ width=68% }
+![Personnalisation de l'interface par sélection de la couleur préférée.](images_jeu/figures/fig02.png){ width=68% }
 
 ## État de l'art
 
@@ -30,7 +30,13 @@ Les agents conversationnels éducatifs ont d'abord été conçus sur des approch
 
 Les générations suivantes ont amélioré cette base avec des systèmes de réponses prédéfinies plus riches, puis des techniques statistiques de classification d'intentions. Ces approches ont rendu les chatbots plus robustes dans des scénarios fermés (FAQ, assistance, entraînement guidé), mais elles restent coûteuses à maintenir et peu souples pour l'enseignement des langues. En pratique, dès que l'apprenant formule une réponse inattendue, la qualité de l'interaction chute.
 
-L'arrivée des architectures neuronales, puis des **Transformers**, a constitué un changement d'échelle. Les grands modèles de langage ne se contentent plus de sélectionner une réponse : ils génèrent un texte contextualisé à partir de l'historique de dialogue et de la consigne. Cette capacité est particulièrement pertinente en éducation, car elle permet la reformulation, l'ajustement du vocabulaire et la reprise d'erreurs de manière plus naturelle.
+L'arrivée des Large Language Models (LLM) constitue une véritable rupture technologique, portée par des systèmes comme ChatGPT (OpenAI, 2022) et Gemini (Google, 2023), qui incarnent aujourd'hui le sommet de cette évolution grâce à des capacités inédites. Ces modèles s'appuient sur une compréhension contextuelle fine, capable d'analyser plusieurs échanges successifs pour saisir l'intention réelle de l'utilisateur et y répondre avec une grande naturalité. Ils produisent ainsi un texte cohérent, fluide et adapté, modulant leur langage en fonction du niveau de l'enfant afin de garantir une communication claire et accessible. Leur multimodalité renforce encore leur potentiel, puisqu'ils peuvent traiter non seulement du texte, mais aussi des images ou de la voix, ouvrant la voie à des expériences d'apprentissage plus riches et immersives. Enfin, leur mécanisme d'apprentissage continu leur permet d'améliorer sans cesse leurs performances, offrant des interactions toujours plus pertinentes, personnalisées et efficaces.
+
+**Frise chronologique - Évolution des chatbots (1966-2024)**
+
+| 1966 | 1972 | 1995 | 2011 | 2022 | 2023 |
+|:----:|:----:|:----:|:----:|:----:|:----:|
+| ELIZA | PARRY | A.L.I.C.E. | Siri | ChatGPT | Gemini |
 
 Dans notre contexte, les modèles de type **Gemini** apportent une rupture utile sur trois dimensions. Premièrement, la compréhension contextuelle améliore la continuité pédagogique d'un échange. Deuxièmement, la souplesse de génération autorise des feedbacks différenciés selon le niveau de l'enfant. Troisièmement, l'ouverture multimodale de cette famille de modèles est prometteuse pour l'évolution future (texte, audio, visuel).
 
@@ -61,11 +67,11 @@ Au-delà du QCM classique, les activités combinent plusieurs formats : compréh
 
 L'exercice de remise en ordre des mots illustre cette logique de production guidée : l'enfant ne se contente pas de reconnaître une bonne réponse, il doit reconstruire activement la phrase anglaise. Cette manipulation soutient la compréhension de la syntaxe de base et la mémorisation des structures.
 
-![Figure 3 - Exercice de remise en ordre des mots (production écrite guidée).](images_jeu/figures/fig03.png){ width=70% }
+![Exercice de remise en ordre des mots (production écrite guidée).](images_jeu/figures/fig03.png){ width=70% }
 
 Nous avons également intégré des aides graduées (écoute, mode lent, indice) pour que l'enfant puisse s'auto-réguler avant de valider. Ce mécanisme évite l'échec binaire et installe une progression accompagnée, plus adaptée à l'âge visé.
 
-![Figure 4 - Écran de reprise avec aides graduées (écoute, lent, indice).](images_jeu/figures/fig06.png){ width=70% }
+![Écran de reprise avec aides graduées (écoute, lent, indice).](images_jeu/figures/fig06.png){ width=70% }
 
 La gamification est structurée autour de mécanismes simples, lisibles par un enfant :
 
@@ -82,17 +88,17 @@ D'un point de vue théorique, ces choix s'alignent avec les travaux sur l'engage
 
 En cas d'erreur, le feedback n'est pas punitif : l'interface met en évidence la bonne réponse et propose de continuer immédiatement. Cette stratégie protège la confiance de l'enfant et transforme l'erreur en information utile plutôt qu'en sanction.
 
-![Figure 5 - Feedback correctif après erreur : réponse attendue et relance immédiate.](images_jeu/figures/fig05.png){ width=70% }
+![Feedback correctif après erreur : réponse attendue et relance immédiate.](images_jeu/figures/fig05.png){ width=70% }
 
 À l'inverse, une réponse correcte déclenche un feedback positif visible (couleurs, validation, progression de score). Ce renforcement rapide entretient la motivation et soutient la répétition volontaire des exercices.
 
-![Figure 6 - Feedback positif après réussite : validation visuelle et continuité de la tâche.](images_jeu/figures/fig07.png){ width=70% }
+![Feedback positif après réussite : validation visuelle et continuité de la tâche.](images_jeu/figures/fig07.png){ width=70% }
 
 Nous avons également intégré un test de positionnement initial, afin d'éviter l'effet démotivant d'un parcours trop facile ou trop difficile. Le placement ajuste le niveau de départ et peut ignorer certaines unités déjà maîtrisées. Cette adaptation initiale améliore la pertinence pédagogique perçue dès les premières sessions.
 
 Le tableau de bord rend la progression immédiatement lisible (niveau CECRL, points, série, avancement des unités). Cette visualisation régulière aide l'enfant à se repérer dans son parcours et à percevoir ses progrès, ce qui est essentiel pour maintenir l'effort dans le temps.
 
-![Figure 7 - Tableau de bord principal : niveau, points, série et progression globale.](images_jeu/figures/fig04.png){ width=70% }
+![Tableau de bord principal : niveau, points, série et progression globale.](images_jeu/figures/fig04.png){ width=70% }
 
 ## Analyse des résultats
 
@@ -102,7 +108,7 @@ Sur la partie IA, les temps de réponse observés restent compatibles avec un us
 
 L'écran de conversation confirme l'apport de l'IA dans la pratique active : l'enfant écrit librement, reçoit une réponse courte, contextualisée et encourageante, puis est relancé par une question simple. Ce format favorise la prise de parole, y compris lorsque l'expression est imparfaite.
 
-![Figure 8 - Module de chat Buddy : interaction guidée et relances conversationnelles.](images_jeu/figures/fig11.png){ width=70% }
+![Module de chat Buddy : interaction guidée et relances conversationnelles.](images_jeu/figures/fig11.png){ width=70% }
 
 Sur le plan pédagogique, les retours qualitatifs sont encourageants : la combinaison « parcours + chat + feedbacks » soutient l'engagement, notamment grâce aux séries et à la visualisation des progrès. Le fait que le chatbot reformule avec un vocabulaire simple réduit la frustration en cas d'erreur.
 
